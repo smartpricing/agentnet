@@ -51,6 +51,6 @@ await new Promise(resolve => setTimeout(resolve, 2000))
 // Agent client
 const agentClient = AgentClient()   
 const res = await agentClient.queryIo(io, 'smartnessAgent', "What rooms do you have from 2025-05-10 to 2025-05-15 for 2 guests? Give me the review of the hotel Flora")
-console.log(res)
+console.log("=======\n", res)
 const res2 = await agentClient.queryIo(io, 'smartnessAgent', "Quanto costa la camera doppia del Flora per il 10-05-2025 per due persone? Prenotala se costa meno di 100€ la camera double con vista mare per il 10-05-2025 al hotel Flora")
-console.log(res2)
+console.log("=======\n", res2)
