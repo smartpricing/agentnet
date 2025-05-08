@@ -7,7 +7,7 @@ import _GPT from "./llm/gpt.js";
 
 export const AgentLoaderFile = _AgentLoader.AgentLoaderFile
 export const AgentLoaderJSON = _AgentLoader.AgentLoaderJSON
-export const AgentLoader = _AgentLoader.AgentLoader
+//export const AgentLoader = _AgentLoader.AgentLoader
 
 export const Agent = _Agent.Agent
 export const AgentClient = _AgentClient.AgentClient

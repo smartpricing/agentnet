@@ -3,111 +3,249 @@ import { parse } from 'yaml'
 import { Gemini } from "../index.js"
 import { Agent } from "./agent.js"
 
-export async function AgentLoaderFile (path, config) {
-    const yamlFileContent = fs.readFileSync(path, 'utf8');
-    const agentDefsYaml = yamlFileContent.split(/^---$/m).map(s => s.trim()).filter(s => s);    
-    let agentDefsJson = []
-    for (const agentDef of agentDefsYaml) {
-        const definition = parse(agentDef)
-        if (!definition || !definition.kind || definition.kind !== 'AgentDefinition') {
-            console.warn("Skipping invalid or non-AgentDefinition document in YAML file.");
-            continue;
-        }        
-        agentDefsJson.push(definition)
+/**
+ * Loads agent definitions from a YAML file
+ * @param {string} path - Path to the YAML file
+ * @param {object} config - Configuration options
+ * @returns {Promise<object>} Map of loaded agents
+ */
+export async function AgentLoaderFile(path, config) {
+    try {
+        const yamlFileContent = fs.readFileSync(path, 'utf8');
+        const agentDefinitions = parseAgentDefinitionsFromYaml(yamlFileContent);
+        return await AgentLoader(agentDefinitions, config);
+    } catch (error) {
+        throw new Error(`Failed to load agents from file ${path}: ${error.message}`);
     }
-    return await AgentLoader(agentDefsJson, config)
 }
 
-export async function AgentLoaderJSON (json, config) {
-    const agentDefsJson = JSON.parse(json)
-    return await AgentLoader([agentDefsJson], config)
+/**
+ * Loads agent definitions from JSON
+ * @param {object} json - JSON definition
+ * @param {object} config - Configuration options
+ * @returns {Promise<object>} Map of loaded agents
+ */
+export async function AgentLoaderJSON(json, config) {
+    return await AgentLoader([json], config);
 }
+
+/**
+ * Parses agent definitions from YAML content
+ * @param {string} yamlContent - YAML content to parse
+ * @returns {Array} Array of agent definitions
+ */
+function parseAgentDefinitionsFromYaml(yamlContent) {
+    const agentDefsYaml = yamlContent.split(/^---$/m)
+        .map(s => s.trim())
+        .filter(s => s);
     
-export async function AgentLoader (agentsDefinitions, config) {
-    const bindings = config.bindings
+    const agentDefinitions = [];
+    
+    for (const agentDef of agentDefsYaml) {
+        try {
+            const definition = parse(agentDef);
+            if (isValidAgentDefinition(definition)) {
+                agentDefinitions.push(definition);
+            } else {
+                console.warn("Skipping invalid or non-AgentDefinition document in YAML.");
+            }
+        } catch (error) {
+            console.warn(`Failed to parse YAML document: ${error.message}`);
+        }
+    }
+    
+    return agentDefinitions;
+}
 
+/**
+ * Checks if a definition is a valid agent definition
+ * @param {object} definition - Definition to validate
+ * @returns {boolean} Whether definition is valid
+ */
+function isValidAgentDefinition(definition) {
+    return definition && definition.kind === 'AgentDefinition' && definition.spec;
+}
+
+/**
+ * Loads an LLM provider instance
+ * @param {string} providerName - Name of the provider
+ * @returns {object} LLM provider instance
+ */
+async function loadLlmProvider(providerName) {
+    if (providerName === 'Gemini') {
+        return Gemini;
+    }
+    
+    try {
+        return global[providerName] || await import(providerName);
+    } catch (error) {
+        throw new Error(`LLM Provider "${providerName}" could not be loaded: ${error.message}`);
+    }
+}
+
+/**
+ * Configures IO for an agent
+ * @param {object} agentBuilder - Agent builder instance
+ * @param {Array} ioDefinitions - IO definitions
+ * @param {object} bindings - IO bindings
+ * @returns {object} Updated agent builder
+ */
+function configureIO(agentBuilder, ioDefinitions, bindings) {
+    if (!ioDefinitions || !Array.isArray(ioDefinitions)) {
+        return agentBuilder;
+    }
+    
+    for (const ioDef of ioDefinitions) {
+        if (!bindings[ioDef.type]) {
+            throw new Error(`Missing binding for IO type: ${ioDef.type}`);
+        }
+        
+        if (ioDef.type === 'NatsIO') {
+            agentBuilder = agentBuilder.addIO(bindings[ioDef.type], ioDef);
+        } else {
+            throw new Error(`Unsupported IO type: ${ioDef.type}`);
+        }
+    }
+    
+    return agentBuilder;
+}
+
+/**
+ * Configures LLM for an agent
+ * @param {object} agentBuilder - Agent builder instance
+ * @param {object} llmSpec - LLM specification
+ * @returns {Promise<object>} Updated agent builder
+ */
+async function configureLLM(agentBuilder, llmSpec) {
+    if (!llmSpec) {
+        return agentBuilder;
+    }
+    
+    const llmProviderInstance = await loadLlmProvider(llmSpec.provider);
+    
+    return agentBuilder.withLLM(llmProviderInstance, {
+        model: llmSpec.model,
+        systemInstruction: llmSpec.systemInstruction,
+        config: llmSpec.config
+    });
+}
+
+/**
+ * Configures discovery schemas for an agent
+ * @param {object} agentBuilder - Agent builder instance
+ * @param {Array} schemas - Discovery schemas
+ * @returns {object} Updated agent builder
+ */
+function configureDiscoverySchemas(agentBuilder, schemas) {
+    if (!schemas || !Array.isArray(schemas)) {
+        return agentBuilder;
+    }
+    
+    for (const schema of schemas) {
+        agentBuilder = agentBuilder.addDiscoverySchema(schema);
+    }
+    
+    return agentBuilder;
+}
+
+/**
+ * Configures tools for an agent
+ * @param {object} agentBuilder - Agent builder instance
+ * @param {Array} toolsSpec - Tools specification
+ * @returns {object} Tool map
+ */
+function configureTools(agentBuilder, toolsSpec) {
+    const toolMap = {};
+    
+    if (!toolsSpec || !Array.isArray(toolsSpec)) {
+        return toolMap;
+    }
+    
+    for (const toolDef of toolsSpec) {
+        agentBuilder._config.toolsSchemas[toolDef.name] = {
+            name: toolDef.name,
+            schema: toolDef,
+            function: null
+        };
+        
+        toolMap[toolDef.name] = {
+            bind: (handlerFunction) => {
+                agentBuilder._config.toolsSchemas[toolDef.name].function = handlerFunction;
+            }
+        };
+    }
+    
+    return toolMap;
+}
+
+/**
+ * Creates an agent interface
+ * @param {object} agentBuilder - Agent builder instance
+ * @param {object} toolMap - Tool map
+ * @returns {object} Agent interface
+ */
+function createAgentInterface(agentBuilder, toolMap) {
+    return {
+        tools: toolMap,
+        prompt: (callback) => {
+            agentBuilder._config.on.prompt = callback;
+        },
+        response: (callback) => {
+            agentBuilder._config.on.response = callback;
+        },
+        compile: async () => {
+            return await agentBuilder.compile();
+        }
+    };
+}
+
+/**
+ * Main agent loading function
+ * @param {Array} agentsDefinitions - Array of agent definitions
+ * @param {object} config - Configuration options
+ * @returns {Promise<object>} Map of loaded agents
+ */
+async function AgentLoader(agentsDefinitions, config = {}) {
+    const bindings = config.bindings || {};
     const loadedAgents = {};
 
-    for (const singleAgent of agentsDefinitions) {
-        const definition = singleAgent
-        if (!definition.spec) {
-            throw new Error(`Invalid agent definition for "${definition.metadata?.name || 'Unnamed Agent'}": missing spec`);
-        }
-        
-        const spec = definition.spec;
-        const metadata = definition.metadata || { name: "default", description: "Agent from YAML definition" };
-        
-        let agentBuilder = Agent()
-        
-        agentBuilder.setMetadata(metadata)
-
-        if (spec.io && Array.isArray(spec.io)) {
-            for (const ioDef of spec.io) {
-                if (ioDef.type === 'NatsIO') {
-                    agentBuilder = agentBuilder.addIO(bindings[ioDef.type], ioDef)
-                } else {
-                    throw new Error(`Unsupported IO type: ${ioDef.type}`)
-                }
-            }
-        }
-        
-        if (spec.llm) {
-            const llmProviderName = spec.llm.provider;
-            let llmProviderInstance;
-            if (llmProviderName === 'Gemini') {
-                llmProviderInstance = Gemini;
-            } else {
-                try {
-                    llmProviderInstance = global[llmProviderName] || await import(llmProviderName);
-                } catch (e) {
-                    throw new Error (`LLM Provider "${llmProviderName}" could not be loaded. Ensure it's available.`);
-                }
+    for (const definition of agentsDefinitions) {
+        try {
+            if (!definition.spec) {
+                throw new Error(`Invalid agent definition: missing spec`);
             }
             
-            agentBuilder = agentBuilder.withLLM(llmProviderInstance, {
-                model: spec.llm.model,
-                systemInstruction: spec.llm.systemInstruction,
-                config: spec.llm.config
-            });
-        }
-        
-        if (spec.discoverySchemas && Array.isArray(spec.discoverySchemas)) {
-            for (const schema of spec.discoverySchemas) {
-                agentBuilder = agentBuilder.addDiscoverySchema(schema);
-            }
-        }
-        
-        let toolMap = {}
-        if (spec.tools && Array.isArray(spec.tools)) {
-            for (const toolDef of spec.tools) {
-                agentBuilder._config.toolsSchemas[toolDef.name] = {
-                    name: toolDef.name,
-                    schema: toolDef,
-                    function: null
-                }
-                toolMap[toolDef.name] = {
-                    bind: (handlerFunction) => {
-                        agentBuilder._config.toolsSchemas[toolDef.name].function = handlerFunction
-                    }
-                }
-            }
-        }
-        if (metadata.name) {
-            loadedAgents[metadata.name] = {
-                tools: toolMap,
-                prompt: (callback) => {
-                    agentBuilder._config.on.prompt = callback
-                },
-                response: (callback) => {
-                    agentBuilder._config.on.response = callback
-                },
-                compile: async () => {
-                    return await agentBuilder.compile()
-                }
+            const spec = definition.spec;
+            const metadata = definition.metadata || { 
+                name: "default", 
+                description: "Agent from definition" 
             };
-        } else {
-            throw new Error("Agent definition in YAML is missing metadata.name, it will not be individually accessible by name from AgentLoader.");
+            
+            if (!metadata.name) {
+                throw new Error("Agent definition is missing metadata.name");
+            }
+            
+            // Initialize agent builder with metadata
+            let agentBuilder = Agent().setMetadata(metadata);
+            
+            // Configure different aspects of the agent
+            agentBuilder = configureIO(agentBuilder, spec.io, bindings);
+            agentBuilder = await configureLLM(agentBuilder, spec.llm);
+            agentBuilder = configureDiscoverySchemas(agentBuilder, spec.discoverySchemas);
+            
+            // Set up tools
+            const toolMap = configureTools(agentBuilder, spec.tools);
+            
+            // Create the agent interface
+            loadedAgents[metadata.name] = createAgentInterface(agentBuilder, toolMap);
+            
+        } catch (error) {
+            const agentName = definition.metadata?.name || 'Unnamed Agent';
+            console.error(`Failed to load agent "${agentName}": ${error.message}`);
+            // Optional: decide whether to throw or just log and continue
+            // throw error;
         }
     }
+
     return loadedAgents;
 }
