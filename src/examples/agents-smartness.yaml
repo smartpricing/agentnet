@@ -1,0 +1,299 @@
+---
+apiVersion: smartagent.io/v1alpha1
+kind: AgentDefinition
+metadata:
+  name: smartnessAgent
+  namespace: smartchat
+spec:
+  io:
+    - type: NatsIO
+      bindings:
+        discoveryTopic: smartness.discovery
+        doHandoffsTo:
+          - "smartness.accomodation.*"
+
+  llm:
+    provider: Gemini
+    model: gemini-2.0-flash
+    systemInstruction: |
+      You are a highly advanced triage agent. 
+      Prioritize clarity and helpfulness.
+      Use tools effectively to gather information.
+    config:
+      temperature: 0.5
+      toolConfig:
+        functionCallingConfig:
+          mode: 'auto'
+      
+
+---
+apiVersion: smartagent.io/v1alpha1
+kind: AgentDefinition
+metadata:
+  name: accomodationAgent
+  namespace: smartchat
+spec:
+  io:
+    - type: NatsIO
+      bindings:
+        discoveryTopic: smartness.discovery
+        doHandoffsTo:
+          - "smartness.accomodation.*"
+
+  llm:
+    provider: Gemini
+    model: gemini-2.0-flash
+    systemInstruction: |
+      You are a highly advanced accomodation manager agent. 
+      Prioritize clarity and helpfulness.
+      Use tools effectively to gather information.
+    config:
+      temperature: 0.5
+      toolConfig:
+        functionCallingConfig:
+          mode: 'auto'
+
+  tools:
+    - name: getRoomsListTool
+      description: Retrieves a list of available rooms based on criteria.
+      parameters:
+        type: object
+        properties:
+          checkinDate:
+            type: string
+            description: The check-in date.
+          checkoutDate:
+            type: string
+            description: The check-out date.
+          guests:
+            type: integer
+            description: Number of guests.
+        required:
+          - checkinDate
+          - checkoutDate
+
+    - name: getRoomDetailTool
+      description: Retrieves detailed information about a specific room.
+      parameters:
+        type: object
+        properties:
+          roomName:
+            type: string
+            description: The name of the room.
+        required:
+          - roomName
+
+  discoverySchemas:
+    - name: accomodation_agent_query
+      description: Get information about the accomodation, like list rooms and get details about a specific room. Also can give rooms availability for a specific date range and number of guests.
+      parameters:
+        type: object
+        properties:
+          question:
+            type: string
+            description: The question to be answered.
+        required:
+          - question             
+
+---
+apiVersion: smartagent.io/v1alpha1
+kind: AgentDefinition
+metadata:
+  name: hotelReviewAgent
+  namespace: smartchat
+spec:
+  io:
+    - type: NatsIO
+      bindings:
+        discoveryTopic: smartness.discovery
+        doHandoffsTo:
+          - "smartness.accomodation.*"
+
+  llm:
+    provider: Gemini
+    model: gemini-2.0-flash
+    systemInstruction: |
+      You are a highly advanced hotel review agent. 
+      Prioritize clarity and helpfulness.
+      Use tools effectively to gather information.
+    config:
+      temperature: 0.5
+      toolConfig:
+        functionCallingConfig:
+          mode: 'auto'
+
+  tools:
+    - name: getHotelReviewsTool
+      description: Retrieves a list of reviews for a specific hotel.
+      parameters:
+        type: object
+        properties:
+          hotelName:
+            type: string
+            description: The name of the hotel.
+        required:
+          - hotelName
+
+  discoverySchemas:
+    - name: hotel_review_agent_query
+      description: Perform a hotel review.
+      parameters:
+        type: object
+        properties:
+          hotelName:
+            type: string
+            description: The name of the hotel.
+        required:
+          - hotelName          
+
+---
+apiVersion: smartagent.io/v1alpha1
+kind: AgentDefinition
+metadata:
+  name: bookingAgent
+  namespace: smartchat
+spec:
+  io:
+    - type: NatsIO
+      bindings:
+        discoveryTopic: smartness.discovery
+        doHandoffsTo:
+          - "smartness.accomodation.*"
+
+  llm:
+    provider: Gemini
+    model: gemini-2.0-flash
+    systemInstruction: |
+      You are a highly advanced booking agent. 
+      Prioritize clarity and helpfulness.
+      Use tools effectively to gather information.
+    config:
+      temperature: 0.5
+      toolConfig:
+        functionCallingConfig:
+          mode: 'auto'
+
+  tools:
+    - name: bookRoomTool
+      description: Book a room to a specific hotel and room.
+      parameters:
+        type: object
+        properties:
+          hotelName:
+            type: string
+            description: The name of the hotel.
+          roomName:
+            type: string
+            description: The name of the room.
+          checkinDate:
+            type: string
+            description: The check-in date.
+          checkoutDate:
+            type: string
+            description: The check-out date.
+        required:
+          - hotelName
+
+  discoverySchemas:
+    - name: booking_agent_query
+      description: Perform a booking to a specific hotel and room.
+      parameters:
+        type: object
+        properties:
+          hotelName:
+            type: string
+            description: The name of the hotel.
+          roomName:
+            type: string
+            description: The name of the room.
+          checkinDate:
+            type: string
+            description: The check-in date.
+          checkoutDate:
+            type: string
+            description: The check-out date.
+        required:
+          - hotelName
+          - roomName                    
+
+---
+apiVersion: smartagent.io/v1alpha1
+kind: AgentDefinition
+metadata:
+  name: pricingAgent
+  namespace: smartchat
+spec:
+  io:
+    - type: NatsIO
+      bindings:
+        discoveryTopic: smartness.discovery
+        doHandoffsTo:
+          - "smartness.accomodation.*"
+
+  llm:
+    provider: Gemini
+    model: gemini-2.0-flash
+    systemInstruction: |
+      You are a highly advanced pricing agent. 
+      Prioritize clarity and helpfulness.
+      Use tools effectively to gather information.
+    config:
+      temperature: 0.5
+      toolConfig:
+        functionCallingConfig:
+          mode: 'auto'
+
+  tools:
+    - name: getPricingTool
+      description: Get the pricing for a specific room.
+      parameters:
+        type: object
+        properties:
+          hotelName:
+            type: string
+            description: The name of the hotel.
+          roomName:
+            type: string
+            description: The name of the room.
+          checkinDate:
+            type: string
+            description: The check-in date.
+          checkoutDate:
+            type: string
+            description: The check-out date.
+          guests:
+            type: integer
+            description: Number of guests.
+        required:
+          - hotelName
+          - roomName
+          - checkinDate
+          - checkoutDate
+
+  discoverySchemas:
+    - name: pricing_agent_query
+      description: Get the pricing for a specific room.
+      parameters:
+        type: object
+        properties:
+          hotelName:
+            type: string
+            description: The name of the hotel.
+          roomName:
+            type: string
+            description: The name of the room.
+          checkinDate:
+            type: string
+            description: The check-in date.
+          checkoutDate:
+            type: string
+            description: The check-out date.
+          guests:
+            type: integer
+            description: Number of guests.
+        required:
+          - hotelName
+          - roomName
+          - checkinDate
+          - checkoutDate
+          - guests
