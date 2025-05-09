@@ -94,6 +94,9 @@ spec:
         required:
           - location
 
+  requiredStateKeys:
+    - sessionId
+
   discoverySchemas:
     - name: weather_agent_query
       #type: function

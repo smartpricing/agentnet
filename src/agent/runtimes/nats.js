@@ -210,6 +210,7 @@ async function createTaskHandler(nc, agentName, processingFunction) {
                 });
                 
                 // Process the task with timeout
+                console.log("Processing task, state", payload.state)
                 const response = await withTimeout(
                     async () => processingFunction(payload.state, payload.conversation, payload.input),
                     TIMEOUT_TASK_REQUEST * 2, // Double the timeout for processing

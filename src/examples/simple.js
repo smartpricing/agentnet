@@ -80,7 +80,7 @@ agents.accomodationAgent.tools.getRoomDetailTool.bind(async (state, input) => {
 
 // Compile the agent
 const agentInstance = await agents.accomodationAgent.compile()
-
-const result = await agentInstance.query("What rooms do you have from 2025-05-10 to 2025-05-15 for 2 guests?")
+const agentSession = await agentInstance.session("67a71e42-a7d8-1db2-ad17-64e1c8546b21", {})
+const result = await agentSession.query( "What rooms do you have from 2025-05-10 to 2025-05-15 for 2 guests?")
 
 console.log(result)

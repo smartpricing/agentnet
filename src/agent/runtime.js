@@ -53,8 +53,37 @@ export async function AgentRuntime(agentConfig) {
         }
     }
 
-    // Start handling tasks
-    handleTask(taskFunction)
 
-    return taskFunction
+    const queryFunction = async (sessionId, input) => {
+        try {
+            const state = {};
+            const conversation = [];
+            const formattedInput = typeof input === 'string' ? input : JSON.stringify(input);
+            
+            logger.debug(`Query to agent ${config.metadata.name}`, {
+                inputPreview: formattedInput.substring(0, 100)
+            });
+            
+            // Process input through prompt hook
+            const promptContent = await config.on.prompt(state, formattedInput);
+            
+            // Execute agent runtime
+            const result = await taskFunction(state, conversation, promptContent);
+            
+            // Process result through response hook
+            return await config.on.response(state, conversation, result);
+        } catch (error) {
+            logger.error(`Agent query execution error: ${error.message}`, {
+                agentName: config.metadata.name,
+                error
+            });
+            throw error;
+        }
+    }    
+
+    // Start handling tasks
+    handleTask(taskFunction) // queryFunction
+    
+
+    return taskFunction // queryFunction
 }
