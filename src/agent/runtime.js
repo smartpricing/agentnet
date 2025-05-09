@@ -1,12 +1,13 @@
 import { build, makeToolsAndHandoffsMap } from "./executor.js"
 import { NatsIOAgentRuntime } from "./runtimes/nats.js"
 import { logger } from "../utils/logger.js"
-import { Response } from "../index.js"
+import { Response, SessionStore } from "../index.js"
 
 export async function AgentRuntime(agentConfig) {
     const {
         toolsAndHandoffsMap,
         hooks,
+        store,
         metadata: { name: agentName },
         llm: { api: llmApi, config: llmConfig },
         runner,
@@ -60,9 +61,26 @@ export async function AgentRuntime(agentConfig) {
         try {
             const content = message.getContent()
             const session = message.getSession()
-            // TODO load state from sessionId if not null from storage
-            const state = {};
-            const conversation = [];
+            const sessionId = message.getSessionId()
+
+            // Load and merge session state and session data
+            let storeState = {
+                state: {},
+                conversation: []
+            }
+            if (store && sessionId) {
+                const sessionStore = new SessionStore(sessionId)
+                await store.instance.connect()
+                const _storeState = await sessionStore.load(store.instance)
+                for (const key of Object.keys(_storeState.state)) {
+                    storeState.state[key] = _storeState.state[key]
+                }
+                for (const key of Object.keys(session)) {
+                    storeState.state[key] = session[key]
+                }         
+                storeState.conversation = _storeState.conversation
+            }
+
             const formattedInput = typeof content === 'string' ? content : JSON.stringify(content);
             
             logger.debug(`Query to agent ${agentName}`, {
@@ -70,13 +88,21 @@ export async function AgentRuntime(agentConfig) {
             });
             
             // Process input through prompt hook
-            const promptContent = await prompt(state, formattedInput);
+            const promptContent = await prompt(storeState.state, formattedInput);
             
             // Execute agent runtime
-            const result = await taskFunction(state, conversation, promptContent);
-            
+            const result = await taskFunction(storeState.state, storeState.conversation, promptContent);
             // Process result through response hook
-            const responseMessage = await response(state, conversation, result);
+            const responseMessage = await response(storeState.state, storeState.conversation, result);
+            console.log(storeState)
+            if (store && sessionId) {
+                const sessionStore = new SessionStore(sessionId)
+                await store.instance.connect()
+                sessionStore.setConversation(storeState.conversation)
+                sessionStore.setState(storeState.state)
+                sessionStore.trimConversation(10)
+                await sessionStore.dump(store.instance)
+            }
             const responseFormatted = new Response({
                 content: responseMessage,
                 session: session

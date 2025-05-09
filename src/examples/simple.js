@@ -1,4 +1,4 @@
-import { AgentLoaderJSON, Message } from "../index.js"
+import { AgentLoaderJSON, Message, Bindings, PostgresStore } from "../index.js"
 
 const agentDefinition = {
     "apiVersion": "smartagent.io/v1alpha1",
@@ -8,6 +8,9 @@ const agentDefinition = {
       "namespace": "smartchat"
     },
     "spec": {
+      "store": {
+        "type": "Postgres",
+      },
       "llm": {
         "provider": "Gemini",
         "model": "gemini-2.0-flash",
@@ -68,7 +71,11 @@ const agentDefinition = {
   }
 
 // Load the agent definition
-const agents = await AgentLoaderJSON(agentDefinition)
+const agents = await AgentLoaderJSON(agentDefinition, {
+    bindings: {
+        [Bindings.Postgres]: PostgresStore()
+    }
+})
 
 // Add the binding tools to the agent
 agents.accomodationAgent.tools.getRoomsListTool.bind(async (state, input) => {

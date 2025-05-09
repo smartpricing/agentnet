@@ -52,7 +52,9 @@ await new Promise(resolve => setTimeout(resolve, 2000))
 const agentClient = AgentClient()   
 const message = new Message({
     content: "What rooms do you have from 2025-05-10 to 2025-05-15 for 2 guests? Give me the review of the hotel Flora",
-    sessionId: "67a71e42-a7d8-1db2-ad17-64e1c8546b21"
+    session: {
+        id: "67a71e42-a7d8-1db2-ad17-64e1c8546b21"
+    }
 })
 const res = await agentClient.queryIo(io, 'smartnessAgent', message)
 console.log("=======\n", res.getContent())

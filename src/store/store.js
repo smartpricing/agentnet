@@ -6,8 +6,8 @@ let config = {
     user: process.env.PG_USER || 'postgres',
     host: process.env.PG_HOST || 'localhost', 
     database: process.env.PG_DATABASE || 'postgres',
-    password: process.env.PG_PASSWORD || 'alice',
-    port: process.env.PG_PORT || 5432
+    password: process.env.PG_PASSWORD || 'password',
+    port: process.env.PG_PORT || 5433
 }
 
 if (process.env.PG_USE_SSL == 'true' || process.env.PG_USE_SSL == true) {
@@ -96,12 +96,17 @@ export function redisStore (_config = null) {
 	let config = _config
 
 	return {
-		create: async function () {
-			client = createClient(config || { url: 'redis://localhost:6379' })			
-			client.connect()
+		connect: async function () {
+			if (!client) {
+				client = createClient(config || { url: 'redis://localhost:6379' })			
+				client.connect()
+			}
 		},
 		disconnect: async function () {
-			client.disconnect()
+			if (client) {
+				await client.disconnect()
+				client = null
+			}
 		},
 		set: async function (key, value) {
 			return await client.set(key, value)
@@ -117,11 +122,16 @@ export function postgresStore (_config = null) {
 	let config = _config
 
 	return {
-		create: async function () {
-			client = await pgClient()
+		connect: async function () {
+			if (!client) {
+				client = await getClient()
+			}
 		},
 		disconnect: async function () {
-
+			if (client) {
+				await client.end()
+				client = null
+			}
 		},
 		set: async function (key, value) {
 			const id = uuid()
@@ -141,12 +151,10 @@ export function postgresStore (_config = null) {
 }
 
 export function memoryStore () {
-	let state = null
+	let state = {}
 
 	return {
-		create: async function () {
-			state = {}
-		},
+		connect: async function () {},
 		disconnect: async function () {},
 		set: async function (key, value) {
 			state[key] = value

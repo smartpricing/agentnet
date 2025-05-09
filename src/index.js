@@ -1,13 +1,17 @@
 import * as _Agent from "./agent/agent.js";
 import * as _AgentLoader from "./agent/agent-loader.js";
 import * as _AgentClient from "./agent/client.js";
-import * as _Store from "./store/store.js";
 import _Gemini from "./llm/gemini.js";
 import _GPT from "./llm/gpt.js";
+import { 
+    redisStore, 
+    postgresStore, 
+    memoryStore,
+    session 
+} from "./store/store.js";
 
 export const AgentLoaderFile = _AgentLoader.AgentLoaderFile
 export const AgentLoaderJSON = _AgentLoader.AgentLoaderJSON
-//export const AgentLoader = _AgentLoader.AgentLoader
 
 export const Agent = _Agent.Agent
 export const AgentClient = _AgentClient.AgentClient
@@ -18,6 +22,11 @@ export const LLMRuntime = {
 
 export const Gemini = _Gemini
 export const GPT = _GPT
+
+export const PostgresStore = postgresStore
+export const RedisStore = redisStore
+export const MemoryStore = memoryStore
+export const SessionStore = session
 
 import { connect } from "@nats-io/transport-node"
 export const NatsIO = (config) => {
@@ -40,7 +49,10 @@ export const NatsIO = (config) => {
     }
 }
 export const Bindings = {
-    NatsIO: 'NatsIO'
+    NatsIO: 'NatsIO',
+    Postgres: 'Postgres',
+    Redis: 'Redis',
+    Memory: 'Memory'
 }
 
 export class Message {

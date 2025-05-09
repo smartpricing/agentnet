@@ -111,6 +111,28 @@ function configureIO(agentBuilder, ioDefinitions, bindings) {
 }
 
 /**
+ * Configures store for an agent
+ * @param {object} agentBuilder - Agent builder instance
+ * @param {object} storeSpec - Store specification
+ * @param {object} bindings - Store bindings
+ * @returns {object} Updated agent builder
+ */
+function configureStore(agentBuilder, storeSpec, bindings) {
+    if (!storeSpec) {
+        return agentBuilder;
+    }
+    
+    const storeType = storeSpec.type;
+    
+    if (!bindings[storeType]) {
+        throw new Error(`Missing binding for store type: ${storeType}`);
+    }
+    
+    // Add store to agent builder
+    return agentBuilder.withStore(bindings[storeType], storeSpec);
+}
+
+/**
  * Configures LLM for an agent
  * @param {object} agentBuilder - Agent builder instance
  * @param {object} llmSpec - LLM specification
@@ -230,6 +252,7 @@ async function AgentLoader(agentsDefinitions, config = {}) {
             
             // Configure different aspects of the agent
             agentBuilder = configureIO(agentBuilder, spec.io, bindings);
+            agentBuilder = configureStore(agentBuilder, spec.store, bindings);
             agentBuilder = await configureLLM(agentBuilder, spec.llm);
             agentBuilder = configureDiscoverySchemas(agentBuilder, spec.discoverySchemas);
             

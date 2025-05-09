@@ -51,6 +51,13 @@ const AGENT_CONFIG_SCHEMA = {
             },
             required: ['api']
         },
+        store: {
+            type: 'object',
+            properties: {
+                instance: { type: 'object' },
+                config: { type: 'object' }
+            }
+        },
         io: { type: 'array' },
         handoffs: { type: 'array' },
         discoverySchemas: { type: 'array' },
@@ -81,6 +88,7 @@ export function Agent() {
     const config = {
         metadata: { ...DEFAULT_CONFIG.metadata },
         llm: {},
+        store: null,
         io: [],
         handoffs: [],
         discoverySchemas: [],
@@ -128,6 +136,21 @@ export function Agent() {
                 throw new ConfigurationError("LLM API must have a callModel method", { 
                     apiMethods: Object.keys(config.llm.api)
                 });
+            }
+            
+            // Store validation if present
+            if (config.store) {
+                if (typeof config.store.instance !== 'object' || config.store.instance === null) {
+                    throw new ConfigurationError("Store instance must be a valid object", { 
+                        store: config.store 
+                    });
+                }
+                
+                if (!config.store.instance.connect || typeof config.store.instance.connect !== 'function') {
+                    throw new ConfigurationError("Store instance must have a connect method", { 
+                        storeInstanceMethods: Object.keys(config.store.instance)
+                    });
+                }
             }
             
             // IO validation
@@ -249,6 +272,27 @@ export function Agent() {
     }
     
     /**
+     * Configures the store for the agent
+     * @param {Object} storeInstance - Store instance
+     * @param {Object} storeConfig - Store configuration
+     * @returns {Object} Agent builder for chaining
+     */
+    function withStore(storeInstance, storeConfig) {
+        if (!storeInstance) {
+            throw new ConfigurationError("Store instance is required", {
+                provided: storeInstance
+            });
+        }
+        
+        config.store = {
+            instance: storeInstance,
+            config: storeConfig || {}
+        };
+        
+        return this;
+    }
+    
+    /**
      * Registers an event handler
      * @param {String} eventName - Event name
      * @param {Function} handler - Event handler function
@@ -358,6 +402,7 @@ export function Agent() {
     return {
         addIO,
         withLLM,
+        withStore,
         on,
         addDiscoverySchema,
         addToolSchema,
