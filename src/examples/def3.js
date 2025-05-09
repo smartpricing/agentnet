@@ -1,4 +1,4 @@
-import { AgentLoaderFile, AgentClient, NatsIO, Bindings } from "../index.js"
+import { AgentLoaderFile, AgentClient, NatsIO, Bindings, Message } from "../index.js"
 
 // NatsIO instance
 const io = NatsIO({
@@ -50,7 +50,11 @@ await new Promise(resolve => setTimeout(resolve, 2000))
 
 // Agent client
 const agentClient = AgentClient()   
-const res = await agentClient.queryIo(io, 'smartnessAgent', "What rooms do you have from 2025-05-10 to 2025-05-15 for 2 guests? Give me the review of the hotel Flora", { sessionId: "67a71e42-a7d8-1db2-ad17-64e1c8546b21"})
-console.log("=======\n", res)
-const res2 = await agentClient.queryIo(io, 'smartnessAgent', "Quanto costa la camera doppia del Flora per il 10-05-2025 per due persone? Prenotala se costa meno di 100€ la camera double con vista mare per il 10-05-2025 al hotel Flora")
-console.log("=======\n", res2)
+const message = new Message({
+    content: "What rooms do you have from 2025-05-10 to 2025-05-15 for 2 guests? Give me the review of the hotel Flora",
+    sessionId: "67a71e42-a7d8-1db2-ad17-64e1c8546b21"
+})
+const res = await agentClient.queryIo(io, 'smartnessAgent', message)
+console.log("=======\n", res.getContent())
+//const res2 = await agentClient.queryIo(io, 'smartnessAgent', "Quanto costa la camera doppia del Flora per il 10-05-2025 per due persone? Prenotala se costa meno di 100€ la camera double con vista mare per il 10-05-2025 al hotel Flora")
+//console.log("=======\n", res2)

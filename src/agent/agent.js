@@ -337,35 +337,8 @@ export function Agent() {
             logger.info(`Compiling agent ${config.metadata.name}`);
             const runtime = await AgentRuntime(config);
 
-            const queryFunction = async (input) => {
-                try {
-                    const state = {};
-                    const conversation = [];
-                    const formattedInput = typeof input === 'string' ? input : JSON.stringify(input);
-                    
-                    logger.debug(`Query to agent ${config.metadata.name}`, {
-                        inputPreview: formattedInput.substring(0, 100)
-                    });
-                    
-                    // Process input through prompt hook
-                    const promptContent = await config.on.prompt(state, formattedInput);
-                    
-                    // Execute agent runtime
-                    const result = await runtime(state, conversation, promptContent);
-                    
-                    // Process result through response hook
-                    return await config.on.response(state, conversation, result);
-                } catch (error) {
-                    logger.error(`Agent query execution error: ${error.message}`, {
-                        agentName: config.metadata.name,
-                        error
-                    });
-                    throw error;
-                }
-            }
-            
             return {
-                query: queryFunction
+                query: runtime
             };
         } catch (error) {
             logger.error(`Agent compilation error: ${error.message}`, {

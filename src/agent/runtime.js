@@ -1,5 +1,7 @@
 import { build, makeToolsAndHandoffsMap } from "./executor.js"
 import { NatsIOAgentRuntime } from "./runtimes/nats.js"
+import { logger } from "../utils/logger.js"
+import { Response } from "../index.js"
 
 export async function AgentRuntime(agentConfig) {
     const {
@@ -11,7 +13,8 @@ export async function AgentRuntime(agentConfig) {
         toolsSchemas: tools,
         handoffs,
         io: ioInterfaces,
-        discoverySchemas
+        discoverySchemas,
+        on: { prompt, response }
     } = agentConfig
     
     // Initialize IO runtime
@@ -53,28 +56,35 @@ export async function AgentRuntime(agentConfig) {
         }
     }
 
-
-    const queryFunction = async (sessionId, input) => {
+    const queryFunction = async function(message) {
         try {
+            const content = message.getContent()
+            const session = message.getSession()
+            // TODO load state from sessionId if not null from storage
             const state = {};
             const conversation = [];
-            const formattedInput = typeof input === 'string' ? input : JSON.stringify(input);
+            const formattedInput = typeof content === 'string' ? content : JSON.stringify(content);
             
-            logger.debug(`Query to agent ${config.metadata.name}`, {
+            logger.debug(`Query to agent ${agentName}`, {
                 inputPreview: formattedInput.substring(0, 100)
             });
             
             // Process input through prompt hook
-            const promptContent = await config.on.prompt(state, formattedInput);
+            const promptContent = await prompt(state, formattedInput);
             
             // Execute agent runtime
             const result = await taskFunction(state, conversation, promptContent);
             
             // Process result through response hook
-            return await config.on.response(state, conversation, result);
+            const responseMessage = await response(state, conversation, result);
+            const responseFormatted = new Response({
+                content: responseMessage,
+                session: session
+            })
+            return responseFormatted;
         } catch (error) {
             logger.error(`Agent query execution error: ${error.message}`, {
-                agentName: config.metadata.name,
+                agentName: agentName,
                 error
             });
             throw error;
@@ -82,8 +92,8 @@ export async function AgentRuntime(agentConfig) {
     }    
 
     // Start handling tasks
-    handleTask(taskFunction) // queryFunction
+    handleTask(queryFunction) // queryFunction
     
 
-    return taskFunction // queryFunction
+    return queryFunction // queryFunction
 }

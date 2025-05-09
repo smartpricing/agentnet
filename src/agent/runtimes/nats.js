@@ -1,7 +1,7 @@
 /**
  * NATS Runtime implementation for agent communication
  */
-
+import { Message } from '../../index.js';
 import { logger } from '../../utils/logger.js';
 import { 
   TransportError, 
@@ -65,9 +65,13 @@ async function setupDiscoverySubscription(nc, discoveryTopic, agentName, discove
                                             try {
                                                 const response = await withRetry(
                                                     async () => {
+                                                        const message = new Message({ 
+                                                            session: state,
+                                                            content: input
+                                                        })
                                                         const req = await nc.request(
                                                             payloadSetup.agentName, 
-                                                            JSON.stringify({ state, conversation, input }), 
+                                                            message.serialize(), 
                                                             { timeout: TIMEOUT_TASK_REQUEST }
                                                         );
                                                         return req.string();
@@ -202,32 +206,33 @@ async function createTaskHandler(nc, agentName, processingFunction) {
                 if (!payload || typeof payload !== 'object') {
                     throw new Error('Invalid payload: not a JSON object');
                 }
-                
+                const message = new Message(payload)
+                const input = message.getContent()
+
                 logger.debug(`Received task request for ${agentName}`, {
-                    inputPreview: typeof payload.input === 'string' 
-                        ? payload.input.substring(0, 100) 
+                    inputPreview: typeof input === 'string' 
+                        ? input.substring(0, 100) 
                         : 'Non-string input'
                 });
                 
                 // Process the task with timeout
-                console.log("Processing task, state", payload.state)
                 const response = await withTimeout(
-                    async () => processingFunction(payload.state, payload.conversation, payload.input),
+                    async () => processingFunction(message),
                     TIMEOUT_TASK_REQUEST * 2, // Double the timeout for processing
                     `task processing for ${agentName}`
                 );
                 
                 // Respond with the result
-                await m.respond(typeof response === 'string' ? response : JSON.stringify(response));
+                await m.respond(response.serialize());
                 
                 logger.debug(`Completed task request for ${agentName}`);
             } catch (error) {
                 logger.error("Error processing task", {
                     error,
                     agentName,
-                    inputPreview: payload && payload.input 
-                        ? (typeof payload.input === 'string' 
-                            ? payload.input.substring(0, 100) 
+                    inputPreview: payload && input 
+                        ? (typeof input === 'string' 
+                            ? input.substring(0, 100) 
                             : 'Non-string input')
                         : 'No input' 
                 });
