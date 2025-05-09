@@ -99,6 +99,15 @@ const onResponse = async function (state, conversation, toolsAndHandoffsMap, res
             }
             
             let result = await toolsAndHandoffsMap[name].function(conversation, state, args);
+            if (toolsAndHandoffsMap[name].type === 'handoff') {
+                const resultParsed = JSON.parse(result)
+                // Update state with the result
+                if (resultParsed.session) {
+                    for (const key of Object.keys(resultParsed.session)) {
+                        state[key] = resultParsed.session[key]
+                    }
+                }
+            }
             
             const function_response_part = {
                 name: name,

@@ -97,6 +97,16 @@ const onResponse = async function (state, conversation, toolsAndHandoffsMap, res
 			
 			let result = await toolsAndHandoffsMap[name].function(conversation, state, args)
 			conversation.push(toolCall)
+            if (toolsAndHandoffsMap[name].type === 'handoff') {
+                console.log("GPT HANDOFF onResponse", name, result)
+                const resultParsed = JSON.parse(result)
+                // Update state with the result
+                if (resultParsed.session) {
+                    for (const key of Object.keys(resultParsed.session)) {
+                        state[key] = resultParsed.session[key]
+                    }
+                }
+            }			
 			
 			const resultString = typeof result == 'string' ? result : JSON.stringify(result)
 			

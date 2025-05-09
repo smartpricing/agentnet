@@ -129,7 +129,7 @@ spec:
 
   tools:
     - name: getHotelReviewsTool
-      description: Retrieves a list of reviews for a specific hotel.
+      description: Get a review of a specific hotel.
       parameters:
         type: object
         properties:

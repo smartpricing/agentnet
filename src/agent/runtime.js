@@ -94,9 +94,9 @@ export async function AgentRuntime(agentConfig) {
             
             // Execute agent runtime
             const result = await taskFunction(storeState.state, storeState.conversation, promptContent);
+
             // Process result through response hook
             const responseMessage = await response(storeState.state, storeState.conversation, result);
-
             // Save session state and session data
             if (store && sessionId) {
                 const sessionStore = new SessionStore(storeStateSessionId)
@@ -107,9 +107,10 @@ export async function AgentRuntime(agentConfig) {
                 await sessionStore.dump(store.instance)
                 logger.info(`Dumped session state for agent ${agentName} with session id ${storeStateSessionId}, current conversation length ${storeState.conversation.length}`);                
             }
+
             const responseFormatted = new Response({
                 content: responseMessage,
-                session: session
+                session: storeState.state
             })
             return responseFormatted;
         } catch (error) {
@@ -124,6 +125,5 @@ export async function AgentRuntime(agentConfig) {
     // Start handling tasks
     handleTask(queryFunction) // queryFunction
     
-
     return queryFunction // queryFunction
 }

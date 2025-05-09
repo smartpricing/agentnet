@@ -208,6 +208,7 @@ async function createTaskHandler(nc, agentName, processingFunction) {
                 }
                 const message = new Message(payload)
                 const input = message.getContent()
+                const session = message.getSession()
 
                 logger.debug(`Received task request for ${agentName}`, {
                     inputPreview: typeof input === 'string' 
