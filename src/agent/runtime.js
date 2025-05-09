@@ -108,6 +108,19 @@ export async function AgentRuntime(agentConfig) {
                 logger.info(`Dumped session state for agent ${agentName} with session id ${storeStateSessionId}, current conversation length ${storeState.conversation.length}`);                
             }
 
+            // Before returning, remove _ from the state
+            // Keep the removed keys and print the removed keys 
+            const removedKeys = []
+            for (const key of Object.keys(storeState.state)) {
+                if (key.startsWith('_')) {
+                    removedKeys.push(key)
+                    delete storeState.state[key]
+                }
+            }
+            if (removedKeys.length > 0) {
+                logger.info(`Removed keys from state for agent ${agentName}: ${removedKeys.join(', ')}`);
+            }
+
             const responseFormatted = new Response({
                 content: responseMessage,
                 session: storeState.state

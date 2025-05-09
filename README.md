@@ -378,6 +378,78 @@ const response = await smartAgent.query(
 );
 ```
 
+### Session State Management
+
+The SmartAgent framework provides robust session management for maintaining state across conversations and agent interactions:
+
+```javascript
+// Creating a message with session information
+const message = new Message({
+  content: "What rooms do you have available?",
+  session: {
+    id: "67a71e42-a7d8-1db2-ad17-64e1c8546b21",  // Reserved system ID
+    propertySetId: "123",                         // Custom session data
+    userPreferences: { roomType: "suite" }        // Custom session data
+  }
+});
+
+// Query the agent with session context
+const result = await agentInstance.query(message);
+```
+
+#### Session ID
+
+The `id` keyword in the session object is reserved for the system. It's used to uniquely identify the session for:
+- Loading session state from persistent storage
+- Saving session state back to storage
+- Tracking conversation history
+
+#### State Propagation
+
+Session variables have different scopes:
+
+1. **Regular variables** (without underscore prefix) are propagated between agents during handoffs, ensuring continuity of context across the agent system.
+
+2. **Private variables** (with underscore prefix `_`) are agent-specific and not shared during handoffs. For example:
+   ```javascript
+   message.session._agentPrivateData = "This stays with the current agent";
+   message.session.sharedData = "This is passed between agents";
+   ```
+
+When a session is saved to storage, private variables (starting with `_`) are automatically removed to keep the session data clean and focused on shareable information.
+
+#### Stores Configuration
+
+SmartAgent supports different storage backends for persisting session state:
+
+```javascript
+// Configure the agent with a Postgres store
+const agents = await AgentLoaderJSON(agentDefinition, {
+  bindings: {
+    [Bindings.Postgres]: PostgresStore({
+      url: "postgres://postgres:postgres@localhost:5432/postgres"
+    })
+  }
+});
+
+// Or with an in-memory store for testing
+const agents = await AgentLoaderJSON(agentDefinition, {
+  bindings: {
+    [Bindings.Memory]: MemoryStore()
+  }
+});
+```
+
+#### Session Life Cycle
+
+1. When an agent receives a query with a session ID, it attempts to load the existing session state
+2. The state is merged with any new session data provided in the query
+3. The agent processes the query with access to this state
+4. Before responding, the updated state is saved back to storage
+5. Private variables (with `_` prefix) are removed from the response
+
+This mechanism allows agents to maintain context across multiple interactions while keeping appropriate boundaries between agent-specific and shared data.
+
 ## Installation
 
 ```bash
