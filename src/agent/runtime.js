@@ -62,6 +62,7 @@ export async function AgentRuntime(agentConfig) {
             const content = message.getContent()
             const session = message.getSession()
             const sessionId = message.getSessionId()
+            const storeStateSessionId = agentName + "." + sessionId
 
             // Load and merge session state and session data
             let storeState = {
@@ -69,7 +70,7 @@ export async function AgentRuntime(agentConfig) {
                 conversation: []
             }
             if (store && sessionId) {
-                const sessionStore = new SessionStore(sessionId)
+                const sessionStore = new SessionStore(storeStateSessionId)
                 await store.instance.connect()
                 const _storeState = await sessionStore.load(store.instance)
                 for (const key of Object.keys(_storeState.state)) {
@@ -79,6 +80,7 @@ export async function AgentRuntime(agentConfig) {
                     storeState.state[key] = session[key]
                 }         
                 storeState.conversation = _storeState.conversation
+                logger.info(`Loaded session state for agent ${agentName} with session id ${storeStateSessionId}, current conversation length ${storeState.conversation.length}`);                
             }
 
             const formattedInput = typeof content === 'string' ? content : JSON.stringify(content);
@@ -94,14 +96,16 @@ export async function AgentRuntime(agentConfig) {
             const result = await taskFunction(storeState.state, storeState.conversation, promptContent);
             // Process result through response hook
             const responseMessage = await response(storeState.state, storeState.conversation, result);
-            console.log(storeState)
+
+            // Save session state and session data
             if (store && sessionId) {
-                const sessionStore = new SessionStore(sessionId)
+                const sessionStore = new SessionStore(storeStateSessionId)
                 await store.instance.connect()
                 sessionStore.setConversation(storeState.conversation)
                 sessionStore.setState(storeState.state)
                 sessionStore.trimConversation(10)
                 await sessionStore.dump(store.instance)
+                logger.info(`Dumped session state for agent ${agentName} with session id ${storeStateSessionId}, current conversation length ${storeState.conversation.length}`);                
             }
             const responseFormatted = new Response({
                 content: responseMessage,

@@ -11,7 +11,8 @@ spec:
         discoveryTopic: smartness.discovery
         doHandoffsTo:
           - "smartness.accomodation.*"
-
+  store:
+    type: Postgres
   llm:
     provider: Gemini
     model: gemini-2.0-flash
@@ -39,6 +40,8 @@ spec:
         discoveryTopic: smartness.discovery
         doHandoffsTo:
           - "smartness.accomodation.*"
+  store:
+    type: Postgres
 
   llm:
     provider: Gemini
@@ -108,6 +111,8 @@ spec:
         discoveryTopic: smartness.discovery
         doHandoffsTo:
           - "smartness.accomodation.*"
+  store:
+    type: Postgres
 
   llm:
     provider: Gemini
@@ -159,6 +164,8 @@ spec:
         discoveryTopic: smartness.discovery
         doHandoffsTo:
           - "smartness.accomodation.*"
+  store:
+    type: Postgres
 
   llm:
     provider: Gemini
@@ -229,6 +236,8 @@ spec:
         discoveryTopic: smartness.discovery
         doHandoffsTo:
           - "smartness.accomodation.*"
+  store:
+    type: Postgres
 
   llm:
     provider: Gemini
