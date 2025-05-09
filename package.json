@@ -1,5 +1,5 @@
 {
-  "name": "smartagent",
+  "name": "agentnet",
   "version": "0.0.1",
   "type": "module",
   "description": "Agent library used by Smartness",

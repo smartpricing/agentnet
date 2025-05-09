@@ -1,6 +1,28 @@
 # SmartAgent Framework
 
-SmartAgent is a flexible, extensible framework for building and orchestrating LLM-powered agents that can communicate, collaborate, and leverage tools to solve complex tasks.
+SmartAgent is a flexible, extensible framework for building and orchestrating LLM-powered agents that can communicate, collaborate, and leverage tools to solve complex tasks. It is specifically designed to develop autonomous networks of agents that can work together to accomplish sophisticated objectives with minimal human intervention.
+
+## Table of Contents
+
+- [Declarative Agent Definitions](#declarative-agent-definitions)
+  - [Static Definitions (YAML)](#static-definitions-yaml)
+  - [Dynamic Implementation (JavaScript)](#dynamic-implementation-javascript)
+  - [Multi-Agent Systems with YAML](#multi-agent-systems-with-yaml)
+- [Key Features](#key-features)
+- [Quick Start](#quick-start)
+- [Core Concepts](#core-concepts)
+  - [Agents](#agents)
+  - [Agent Configuration](#agent-configuration)
+  - [Tool Binding](#tool-binding)
+  - [Transport Mechanisms](#transport-mechanisms)
+  - [Agent Auto-Discovery](#agent-auto-discovery)
+  - [Agent Handoffs](#agent-handoffs)
+- [Advanced Usage](#advanced-usage)
+  - [Events and Hooks](#events-and-hooks)
+  - [Multi-Agent Systems](#multi-agent-systems)
+  - [Session State Management](#session-state-management)
+- [Installation](#installation)
+- [License](#license)
 
 ## Declarative Agent Definitions
 
@@ -132,7 +154,7 @@ This separation of concerns allows for:
 
 ### Multi-Agent Systems with YAML
 
-The framework excels at creating multi-agent systems where specialized agents collaborate. An example setup might include:
+The framework excels at creating autonomous multi-agent systems where specialized agents collaborate with minimal supervision. Each agent in the network can operate independently while maintaining awareness of other agents' capabilities. This creates a resilient, self-organizing system that can tackle complex tasks through agent collaboration. An example setup might include:
 
 ```javascript
 // Load a set of specialized agents from YAML
@@ -171,16 +193,18 @@ const response = await client.queryIo(
 );
 ```
 
-With this setup, the smartness agent will automatically discover and delegate to specialized agents for accommodation, pricing, and booking.
+With this setup, the smartness agent will automatically discover and delegate to specialized agents for accommodation, pricing, and booking, creating an autonomous network that collectively solves the user's query.
 
 ## Key Features
 
+- **Autonomous Agent Networks**: Create self-organizing networks of agents that can discover, communicate, and collaborate with minimal human intervention
 - **Modular Agent Architecture**: Create specialized agents with distinct capabilities and compose them to solve complex problems
 - **Transport Agnostic**: Work with agents directly or through transport mechanisms like NATS
 - **Auto-Discovery**: Agents can discover each other's capabilities dynamically at runtime
 - **Tool Binding**: Easily bind JavaScript functions to agent tools
 - **Agent Handoffs**: Seamlessly delegate tasks between agents
 - **LLM Provider Agnostic**: Support for multiple LLM providers (Gemini and extensible to others)
+- **Persistent Sessions**: Maintain conversation context and state across interactions
 
 ## Quick Start
 
@@ -349,7 +373,7 @@ agent.response((state, conversation, result) => {
 
 ### Multi-Agent Systems
 
-Create systems of specialized agents that collaborate:
+Create autonomous networks of specialized agents that collaborate without human intervention:
 
 ```javascript
 // Create specialized agents
@@ -377,6 +401,12 @@ const response = await smartAgent.query(
   "Plan a trip to Paris and tell me about the weather"
 );
 ```
+
+In this autonomous network:
+- Each agent is responsible for a specific domain of expertise
+- The orchestrator agent (smartAgent) discovers and routes requests to appropriate specialists
+- The network can scale by adding more specialized agents without changing existing ones
+- Agents can be deployed across different environments while maintaining communication
 
 ### Session State Management
 
@@ -416,7 +446,7 @@ Session variables have different scopes:
    message.session.sharedData = "This is passed between agents";
    ```
 
-When a session is saved to storage, private variables (starting with `_`) are automatically removed to keep the session data clean and focused on shareable information.
+When a session is saved to storage, private variables (starting with `_`) are saved on the agent store, but removed from response to the calling agent to keep the session data clean and focused on shareable information.
 
 #### Stores Configuration
 
@@ -456,6 +486,3 @@ This mechanism allows agents to maintain context across multiple interactions wh
 npm install smartagent
 ```
 
-## License
-
-[MIT License](LICENSE)
