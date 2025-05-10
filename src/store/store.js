@@ -1,31 +1,6 @@
 import { v4 as uuid } from 'uuid'
 import { createClient } from 'redis'
-import pg from 'pg'
-
-let config = {
-    user: process.env.PG_USER || 'postgres',
-    host: process.env.PG_HOST || 'localhost', 
-    database: process.env.PG_DATABASE || 'postgres',
-    password: process.env.PG_PASSWORD || 'password',
-    port: process.env.PG_PORT || 5433
-}
-
-if (process.env.PG_USE_SSL == 'true' || process.env.PG_USE_SSL == true) {
-    config.ssl = {
-      rejectUnauthorized: false
-    }
-}
-
-const pool = new pg.Pool(config)
-
-pool.on('error', err => {
-    console.log(new Date(), 'Lost Postgres connection', err)
-})
-
-export async function getClient() {
-    const client = await pool.connect()
-    return client
-}
+import pgp from 'pg-promise'
 
 export function session (id) {
 	let state = {}
@@ -117,37 +92,76 @@ export function redisStore (_config = null) {
 	}
 }
 
-export function postgresStore (_config = null) {
-	let client = null
-	let config = _config
+export function postgresStore(config = null) {
+	let db = null;
+	const pgPromise = pgp(); // Initialize pg-promise
+	// Default connection config
+	const defaultConfig = {
+		host: process.env.PG_HOST || 'localhost',
+		port: process.env.PG_PORT || 5433,
+		database: process.env.PG_DATABASE || 'postgres',
+		user: process.env.PG_USER || 'postgres',
+		password: process.env.PG_PASSWORD || 'password',
+		max: 30, // max number of clients in the pool
+		ssl: process.env.PG_USE_SSL === 'true' ? { rejectUnauthorized: false } : null,
+		table: 'conversation_state',
+		schema: 'smartchat_agent'
+	};
+
+	const connectionConfig = config || defaultConfig;
 
 	return {
-		connect: async function () {
-			if (!client) {
-				client = await getClient()
+		connect: async function() {
+			if (!db) {				
+				// For URL-style connection string
+				if (typeof connectionConfig === 'string') {
+					db = pgPromise(connectionConfig);
+				} else {
+					db = pgPromise(connectionConfig);
+				}
+				
+				// Test connection
+				try {
+					await db.connect();
+				} catch (error) {
+					throw error;
+				}
 			}
 		},
-		disconnect: async function () {
-			if (client) {
-				await client.end()
-				client = null
+		
+		disconnect: async function() {
+			if (db) {
+				await pgPromise.end();
+				db = null;
 			}
 		},
-		set: async function (key, value) {
-			const id = uuid()
-			return await client.query('INSERT INTO smartchat_agent.conversation_state (state_id, state, id) VALUES ($1,$2,$3) ON CONFLICT (state_id) DO UPDATE SET state_id=$1, state=$2', [key, value, id])
+		
+		set: async function(key, value) {
+			const id = uuid();
+			try {
+				return await db.one(
+					'INSERT INTO $1:name.$2:name (state_id, state, id) VALUES ($3, $4, $5) ON CONFLICT (state_id) DO UPDATE SET state=$4 RETURNING id', 
+					[connectionConfig.schema, connectionConfig.table, key, value, id]
+				);
+			} catch (error) {
+				console.error('Error storing state:', error);
+				throw error;
+			}
 		},
-		get: async function (key) {
-			const res = await client.query('SELECT state FROM smartchat_agent.conversation_state WHERE state_id=$1', [key])
-			if (res.rows.length == 1) {
-				return res.rows[0].state
+		
+		get: async function(key) {
+			try {
+				const result = await db.oneOrNone(
+					'SELECT state FROM $1:name.$2:name WHERE state_id = $3',
+					[connectionConfig.schema, connectionConfig.table, key]
+				);
+				return result ? result.state : null;
+			} catch (error) {
+				console.error('Error retrieving state:', error);
+				throw error;
 			}
-			if (res.rows.length > 1) {
-				throw 'Something went wrong at pg store'
-			}
-			return null
 		}
-	}
+	};
 }
 
 export function memoryStore () {
