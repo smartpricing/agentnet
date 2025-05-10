@@ -2,15 +2,18 @@
 apiVersion: smartagent.io/v1alpha1
 kind: AgentDefinition
 metadata:
-  name: smartnessAgent
+  name: entrypoint
   namespace: smartchat
 spec:
   io:
     - type: NatsIO
       bindings:
         discoveryTopic: smartness.discovery
-        doHandoffsTo:
-          - "smartness.accomodation.*"
+        acceptedNetworks: 
+          - "smartchat.accomodation"
+          - "smartchat.booking"
+          - "smartchat.pricing"
+          - "smartchat.review"
   store:
     type: Postgres
   llm:
@@ -31,15 +34,13 @@ spec:
 apiVersion: smartagent.io/v1alpha1
 kind: AgentDefinition
 metadata:
-  name: accomodationAgent
+  name: accomodation
   namespace: smartchat
 spec:
   io:
     - type: NatsIO
       bindings:
         discoveryTopic: smartness.discovery
-        doHandoffsTo:
-          - "smartness.accomodation.*"
   store:
     type: Postgres
 
@@ -102,15 +103,13 @@ spec:
 apiVersion: smartagent.io/v1alpha1
 kind: AgentDefinition
 metadata:
-  name: hotelReviewAgent
+  name: review
   namespace: smartchat
 spec:
   io:
     - type: NatsIO
       bindings:
         discoveryTopic: smartness.discovery
-        doHandoffsTo:
-          - "smartness.accomodation.*"
   store:
     type: Postgres
 
@@ -155,15 +154,13 @@ spec:
 apiVersion: smartagent.io/v1alpha1
 kind: AgentDefinition
 metadata:
-  name: bookingAgent
+  name: booking
   namespace: smartchat
 spec:
   io:
     - type: NatsIO
       bindings:
         discoveryTopic: smartness.discovery
-        doHandoffsTo:
-          - "smartness.accomodation.*"
   store:
     type: Postgres
 
@@ -227,15 +224,13 @@ spec:
 apiVersion: smartagent.io/v1alpha1
 kind: AgentDefinition
 metadata:
-  name: pricingAgent
+  name: pricing
   namespace: smartchat
 spec:
   io:
     - type: NatsIO
       bindings:
         discoveryTopic: smartness.discovery
-        doHandoffsTo:
-          - "smartness.accomodation.*"
   store:
     type: Postgres
 

@@ -11,11 +11,11 @@ const agents = await AgentLoaderFile('./src/examples/agents-smartness.yaml', {
 })
 
 // Entry point
-const agentSmartness = await agents.smartnessAgent
+const agentSmartness = await agents.entrypoint
 await agentSmartness.compile()
 
 // Accomodation agent
-const agentAccomodation = await agents.accomodationAgent
+const agentAccomodation = await agents.accomodation
 agentAccomodation.tools.getRoomsListTool.bind(async (state, input) => {
     return { answer: "We have Double room with a view of the sea and a single room with a view of the pool, and a suite with a view of the city." }
 })
@@ -29,21 +29,21 @@ agentAccomodation.prompt(async (state, input) => {
 await agentAccomodation.compile()
 
 // Booking agent
-const agentBooking = await agents.bookingAgent
+const agentBooking = await agents.booking
 agentBooking.tools.bookRoomTool.bind(async (state, input) => {
     return { answer: "The room " + input.roomName + " has been booked for the dates " + input.checkinDate + " to " + input.checkoutDate + "." }
 })
 await agentBooking.compile()
 
 // Hotel review agent
-const agentHotelReview = await agents.hotelReviewAgent
+const agentHotelReview = await agents.review
 agentHotelReview.tools.getHotelReviewsTool.bind(async (state, input) => {
     return { answer: "The hotel " + input.hotelName + " has a 4.5 star rating and a 9.2 out of 10 guest satisfaction score." }
 })
 await agentHotelReview.compile()
 
 // Pricing agent
-const agentPricing = await agents.pricingAgent
+const agentPricing = await agents.pricing
 agentPricing.tools.getPricingTool.bind(async (state, input) => {
     return { answer: "The room " + input.roomName + " has a price of 200€ per night." }
 })
@@ -60,7 +60,7 @@ const message = new Message({
         id: "67a71e42-a7d8-1db2-ad17-64e1c8546b21"
     }
 })
-const res = await agentClient.queryIo(io, 'smartnessAgent', message)
+const res = await agentClient.queryIo(io, 'entrypoint', message)
 console.log("=======\n", res.getContent())
 console.log("=======\n", res.getSession())
 //const res2 = await agentClient.queryIo(io, 'smartnessAgent', "Quanto costa la camera doppia del Flora per il 10-05-2025 per due persone? Prenotala se costa meno di 100€ la camera double con vista mare per il 10-05-2025 al hotel Flora")

@@ -8,7 +8,7 @@ export async function AgentRuntime(agentConfig) {
         toolsAndHandoffsMap,
         hooks,
         store,
-        metadata: { name: agentName },
+        metadata: { name: agentName, namespace },
         llm: { api: llmApi, config: llmConfig },
         runner,
         toolsSchemas: tools,
@@ -21,6 +21,7 @@ export async function AgentRuntime(agentConfig) {
     // Initialize IO runtime
     const natsInterfaces = ioInterfaces.filter(x => x.type === 'NatsIO')
     const { handleTask, discoveredAgents } = await NatsIOAgentRuntime(
+        namespace,
         agentName, 
         natsInterfaces, 
         discoverySchemas

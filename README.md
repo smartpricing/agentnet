@@ -1,6 +1,6 @@
-# SmartAgent Framework
+# Agentnet Framework
 
-SmartAgent is a flexible, extensible framework for building and orchestrating LLM-powered agents that can communicate, collaborate, and leverage tools to solve complex tasks. It is specifically designed to develop autonomous networks of agents that can work together to accomplish sophisticated objectives with minimal human intervention.
+Agentnet is a flexible, extensible framework for building and orchestrating LLM-powered agents that can communicate, collaborate, and leverage tools to solve complex tasks. It is specifically designed to develop autonomous networks of agents that can work together to accomplish sophisticated objectives with minimal human intervention.
 
 ## Table of Contents
 
@@ -26,7 +26,7 @@ SmartAgent is a flexible, extensible framework for building and orchestrating LL
 
 ## Declarative Agent Definitions
 
-A key feature of SmartAgent is the ability to define agents declaratively using YAML files, separating the static definition of agents from their dynamic runtime behavior:
+A key feature of Agentnet is the ability to define agents declaratively using YAML files, separating the static definition of agents from their dynamic runtime behavior:
 
 ### Static Definitions (YAML)
 
@@ -41,7 +41,7 @@ Example YAML definition:
 
 ```yaml
 ---
-apiVersion: smartagent.io/v1alpha1
+apiVersion: agentnet.io/v1alpha1
 kind: AgentDefinition
 metadata:
   name: bookingAgent
@@ -209,7 +209,7 @@ With this setup, the smartness agent will automatically discover and delegate to
 ## Quick Start
 
 ```javascript
-import { Agent, Gemini, NatsIO } from "smartagent";
+import { Agent, Gemini, NatsIO } from "agentnet";
 
 // Create a simple agent
 const myAgent = Agent()
@@ -410,7 +410,7 @@ In this autonomous network:
 
 ### Session State Management
 
-The SmartAgent framework provides robust session management for maintaining state across conversations and agent interactions:
+The Agentnet framework provides robust session management for maintaining state across conversations and agent interactions:
 
 ```javascript
 // Creating a message with session information
@@ -450,7 +450,7 @@ When a session is saved to storage, private variables (starting with `_`) are sa
 
 #### Stores Configuration
 
-SmartAgent supports different storage backends for persisting session state:
+Agentnet supports different storage backends for persisting session state:
 
 ```javascript
 // Configure the agent with a Postgres store
@@ -483,6 +483,6 @@ This mechanism allows agents to maintain context across multiple interactions wh
 ## Installation
 
 ```bash
-npm install smartagent
+npm install agentnet
 ```
 

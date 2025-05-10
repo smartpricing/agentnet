@@ -19,7 +19,7 @@ const MAX_RECONNECT_ATTEMPTS = 5;
 /**
  * Sets up discovery subscription to find other agents
  */
-async function setupDiscoverySubscription(nc, discoveryTopic, agentName, discoveredAgents) {
+async function setupDiscoverySubscription(nc, discoveryTopic, namespace, agentName, discoveredAgents, acceptedNetworks) {
     let discoverySub;
     
     try {
@@ -35,9 +35,28 @@ async function setupDiscoverySubscription(nc, discoveryTopic, agentName, discove
     
     const handleDiscovery = async () => {
         try {
+            let nonAcceptedNetworks = {}
             for await (const m of discoverySub) {
                 try {
                     const payloadSetup = JSON.parse(m.string());
+
+                    const network = payloadSetup.network
+                    // Skip self
+                    if (network === `${namespace}.${agentName}`) {
+                        continue
+                    }
+
+                    // Skip if already processed
+                    if (nonAcceptedNetworks[network] === true) {
+                        continue
+                    }
+
+                    // Skip if not accepted
+                    if (!acceptedNetworks.includes(network)) {
+                        logger.warn(`Agent ${agentName} does not accept network ${network}`);
+                        nonAcceptedNetworks[network] = true
+                        continue;
+                    }                
                     
                     // Validate the payload structure
                     if (!payloadSetup.agentName || !Array.isArray(payloadSetup.schemas)) {
@@ -52,7 +71,7 @@ async function setupDiscoverySubscription(nc, discoveryTopic, agentName, discove
                             continue;
                         }
                         
-                        const agentKey = `${payloadSetup.agentName}-${schema.name}`;
+                        const agentKey = `${network}-${schema.name}`;
                         
                         if (payloadSetup.agentName !== agentName && !discoveredAgents[agentKey]) {
                             logger.info(`${agentName} discovered agent capability: ${payloadSetup.agentName} with capability ${schema.name}`);
@@ -141,17 +160,17 @@ async function setupDiscoverySubscription(nc, discoveryTopic, agentName, discove
 /**
  * Sets up a heartbeat to announce this agent's capabilities
  */
-function setupDiscoveryHeartbeat(nc, discoveryTopic, agentName, discoverySchemas) {
+function setupDiscoveryHeartbeat(nc, discoveryTopic, namespace, agentName, discoverySchemas) {
     let consecutiveErrors = 0;
     
     return setInterval(async () => {
         try {
             const heartbeatPayload = {
                 type: 'discovery',
+                network: `${namespace}.${agentName}`,
                 agentName: agentName,
                 schemas: discoverySchemas
             };
-            
             await nc.publish(discoveryTopic, JSON.stringify(heartbeatPayload));
             
             // Reset error counter on success
@@ -309,7 +328,7 @@ async function safeConnect(instance, options = {}) {
 /**
  * Creates a NATS-based runtime for agent communication
  */
-export async function NatsIOAgentRuntime(agentName, ioInterfaces, discoverySchemas) {
+export async function NatsIOAgentRuntime(namespace, agentName, ioInterfaces, discoverySchemas) {
     if (ioInterfaces.length > 1) {
         throw new TransportError(
             'Only one IO Nats interface is supported',
@@ -342,13 +361,14 @@ export async function NatsIOAgentRuntime(agentName, ioInterfaces, discoverySchem
         }
         
         const discoveryTopic = io.config.bindings.discoveryTopic;
+        const acceptedNetworks = io.config.bindings.acceptedNetworks || [];
         logger.info(`Agent ${agentName} initialized with discovery topic ${discoveryTopic}`);
 
         // Step 1. Subscribe to discovery topic
-        await setupDiscoverySubscription(nc, discoveryTopic, agentName, discoveredAgents);
+        await setupDiscoverySubscription(nc, discoveryTopic, namespace, agentName, discoveredAgents, acceptedNetworks);
 
         // Step 2. Publish discovery heartbeat
-        const interval = setupDiscoveryHeartbeat(nc, discoveryTopic, agentName, discoverySchemas);
+        const interval = setupDiscoveryHeartbeat(nc, discoveryTopic, namespace, agentName, discoverySchemas);
         intervals.push(interval);
 
         // Step 3. Create task handler
