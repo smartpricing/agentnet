@@ -7,13 +7,11 @@ metadata:
 spec:
   io:
     - type: NatsIO
+      network: smartchat
       bindings:
         discoveryTopic: smartness.discovery
         acceptedNetworks: 
-          - "smartchat.accomodation"
-          - "smartchat.booking"
-          - "smartchat.pricing"
-          - "smartchat.review"
+          - "smartchat.*"
   store:
     type: Postgres
   llm:

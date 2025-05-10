@@ -22,6 +22,7 @@ const DEFAULT_HOOKS = {
 const DEFAULT_CONFIG = {
     metadata: {
         name: "default",
+        namespace: "default",
         description: "A default agent"
     },
     runner: { 
@@ -39,9 +40,10 @@ const AGENT_CONFIG_SCHEMA = {
             type: 'object',
             properties: {
                 name: { type: 'string' },
+                namespace: { type: 'string' },
                 description: { type: 'string' }
             },
-            required: ['name']
+            required: ['name', 'namespace']
         },
         llm: {
             type: 'object',
@@ -115,6 +117,12 @@ export function Agent() {
             // Metadata validation
             if (!config.metadata.name.trim()) {
                 throw new ConfigurationError("Agent name cannot be empty", { 
+                    metadata: config.metadata 
+                });
+            }
+
+            if (!config.metadata.namespace.trim()) {
+                throw new ConfigurationError("Agent namespace cannot be empty", { 
                     metadata: config.metadata 
                 });
             }

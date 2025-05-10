@@ -41,6 +41,9 @@ async function setupDiscoverySubscription(nc, discoveryTopic, namespace, agentNa
                     const payloadSetup = JSON.parse(m.string());
 
                     const network = payloadSetup.network
+                    const networkNamespace = network.split(".")[0]
+                    const networkName = network.split(".")[1]
+
                     // Skip self
                     if (network === `${namespace}.${agentName}`) {
                         continue
@@ -51,8 +54,42 @@ async function setupDiscoverySubscription(nc, discoveryTopic, namespace, agentNa
                         continue
                     }
 
+                    let isAccepted = false;
+                    for (const acceptedNetwork of acceptedNetworks) {
+                        const acceptedNetworkNamespace = acceptedNetwork.split(".")[0]
+                        const acceptedNetworkName = acceptedNetwork.split(".")[1]
+
+                        if (acceptedNetworkNamespace === networkNamespace && acceptedNetworkName === networkName) {
+                            isAccepted = true;
+                            continue
+                        }
+                        // Check for wildcard patterns in accepted networks
+                        
+                        if (acceptedNetworkNamespace === '*' && acceptedNetworkName === '*') {
+                            // Both namespace and name are wildcards, accept any network
+                            logger.debug(`Agent ${agentName} accepting network ${network} due to wildcard pattern *.*`);
+                            isAccepted = true;
+                            continue;
+                        }
+                        
+                        if (acceptedNetworkNamespace === '*' && acceptedNetworkName === networkName) {
+                            // Namespace is wildcard, but name matches
+                            logger.debug(`Agent ${agentName} accepting network ${network} due to wildcard pattern *.${networkName}`);
+                            isAccepted = true;
+                            continue;
+                        }
+                        
+                        if (acceptedNetworkNamespace === networkNamespace && acceptedNetworkName === '*') {
+                            // Name is wildcard, but namespace matches
+                            logger.debug(`Agent ${agentName} accepting network ${network} due to wildcard pattern ${networkNamespace}.*`);
+                            isAccepted = true;
+                            continue;
+                        }
+                        
+                    }
+
                     // Skip if not accepted
-                    if (!acceptedNetworks.includes(network)) {
+                    if (!isAccepted) {
                         logger.warn(`Agent ${agentName} does not accept network ${network}`);
                         nonAcceptedNetworks[network] = true
                         continue;
