@@ -27,7 +27,6 @@ spec:
         functionCallingConfig:
           mode: 'auto'
       
-
 ---
 apiVersion: smartagent.io/v1alpha1
 kind: AgentDefinition

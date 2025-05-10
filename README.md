@@ -51,8 +51,8 @@ spec:
     - type: NatsIO
       bindings:
         discoveryTopic: smartness.discovery
-        doHandoffsTo:
-          - "smartness.accomodation.*"
+        acceptedNetworks: 
+          - "smartchat.*"
 
   llm:
     provider: Gemini
@@ -163,17 +163,17 @@ const agents = await AgentLoaderFile('./agents-smartness.yaml', {
 });
 
 // Configure each agent with specific tool implementations
-agents.accomodationAgent.tools.getRoomsListTool.bind(async (state, input) => {
+agents.accomodation.tools.getRoomsListTool.bind(async (state, input) => {
   // Implementation for listing available rooms
   return { rooms: ["Double room with sea view", "Single room with pool view"] };
 });
 
-agents.pricingAgent.tools.getPricingTool.bind(async (state, input) => {
+agents.pricing.tools.getPricingTool.bind(async (state, input) => {
   // Implementation for getting room prices
   return { price: "200€ per night" };
 });
 
-agents.bookingAgent.tools.bookRoomTool.bind(async (state, input) => {
+agents.booking.tools.bookRoomTool.bind(async (state, input) => {
   // Implementation for booking rooms
   return { confirmation: "Booking confirmed" };
 });
@@ -188,7 +188,7 @@ await new Promise(resolve => setTimeout(resolve, 2000));
 const client = AgentClient();
 const response = await client.queryIo(
   natsIO,
-  'smartnessAgent', 
+  'entrypoint', 
   "What rooms do you have available for next weekend and how much do they cost?"
 );
 ```
@@ -318,7 +318,12 @@ const natsIO = NatsIO({ servers: ['nats://localhost:4222'] });
 // Configure agent with NATS transport
 const myAgent = Agent()
   .setMetadata({ name: "distributedAgent" })
-  .addIO(natsIO, { bindings: { discoveryTopic: "agent.discovery" } })
+  .addIO(natsIO, { 
+    bindings: { 
+      discoveryTopic: "smartness.discovery",
+      acceptedNetworks: ["smartchat.*"]
+    }
+  })
   .withLLM(Gemini, { model: "gemini-pro" });
 
 // Query an agent through NATS
@@ -341,6 +346,48 @@ await new Promise(resolve => setTimeout(resolve, 2000));
 
 // Now agents can communicate with each other
 ```
+
+### Network Filtering
+
+The framework provides a powerful network filtering mechanism that allows agents to control which other agents they communicate with. This is configured through the `acceptedNetworks` property:
+
+```javascript
+// Configure agent with network filtering
+const myAgent = Agent()
+  .setMetadata({ name: "filteredAgent" })
+  .addIO(natsIO, { 
+    network: "smartchat",
+    bindings: { 
+      discoveryTopic: "smartness.discovery",
+      acceptedNetworks: ["smartchat.*", "finance.pricing"]
+    }
+  })
+  .withLLM(Gemini, { model: "gemini-pro" });
+```
+
+#### Wildcard Patterns
+
+Network filtering supports various wildcard patterns:
+
+1. **Full wildcard** (`*.*`): Accept all networks regardless of namespace or name
+2. **Namespace wildcard** (`*.serviceName`): Accept any network with the specified service name, regardless of namespace
+3. **Service wildcard** (`namespace.*`): Accept any service within the specified namespace
+
+For example:
+
+```yaml
+io:
+  - type: NatsIO
+    network: smartchat
+    bindings:
+      discoveryTopic: smartness.discovery
+      acceptedNetworks: 
+        - "smartchat.*"     # Accept all services in smartchat namespace
+        - "finance.pricing" # Accept only the pricing service in finance namespace
+        - "*.analytics"     # Accept analytics services from any namespace
+```
+
+This filtering system allows for fine-grained control over agent communication, enhancing security and improving the efficiency of the agent network. Agents will only process discovery messages from networks that match their acceptance patterns.
 
 ### Agent Handoffs
 
@@ -379,15 +426,34 @@ Create autonomous networks of specialized agents that collaborate without human 
 // Create specialized agents
 const weatherAgent = Agent()
   .setMetadata({ name: "weatherAgent" })
+  .addIO(NatsIO({ servers: ['nats://localhost:4222'] }), {
+    network: "smartchat",
+    bindings: { 
+      discoveryTopic: "smartness.discovery"
+    }
+  })
   .addToolSchema(weatherToolSchema);
 
 const travelAgent = Agent()
   .setMetadata({ name: "travelAgent" })
+  .addIO(NatsIO({ servers: ['nats://localhost:4222'] }), {
+    network: "smartchat",
+    bindings: { 
+      discoveryTopic: "smartness.discovery"
+    }
+  })
   .addToolSchema(travelToolSchema);
 
 // The main agent that orchestrates others
 const smartAgent = Agent()
   .setMetadata({ name: "smartAgent" })
+  .addIO(NatsIO({ servers: ['nats://localhost:4222'] }), {
+    network: "smartchat",
+    bindings: { 
+      discoveryTopic: "smartness.discovery",
+      acceptedNetworks: ["smartchat.*"]
+    }
+  })
   .addDiscoverySchema(weatherDiscoverySchema)
   .addDiscoverySchema(travelDiscoverySchema);
 
