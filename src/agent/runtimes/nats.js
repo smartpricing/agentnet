@@ -17,6 +17,79 @@ const TIMEOUT_TASK_REQUEST = 60000;
 const MAX_RECONNECT_ATTEMPTS = 5;
 
 /**
+ * Class representing a discovery message for agent capabilities
+ */
+class DiscoveryMessage {
+    /**
+     * Create a new discovery message
+     * @param {string} namespace - The agent namespace
+     * @param {string} agentName - The agent name
+     * @param {Array} schemas - The agent capability schemas
+     */
+    constructor(namespace, agentName, schemas) {
+        if (!namespace) throw new Error('Namespace is required');
+        if (!agentName) throw new Error('Agent name is required');
+        if (!Array.isArray(schemas)) throw new Error('Schemas must be an array');
+        
+        this.type = 'discovery';
+        this.network = `${namespace}.${agentName}`;
+        this.agentName = agentName;
+        this.schemas = schemas;
+    }
+    
+    /**
+     * Serialize the message to a JSON string
+     * @returns {string} The serialized message
+     */
+    serialize() {
+        return JSON.stringify({
+            type: this.type,
+            network: this.network,
+            agentName: this.agentName,
+            schemas: this.schemas
+        });
+    }
+    
+    /**
+     * Create a DiscoveryMessage from a serialized string
+     * @param {string} data - The serialized message data
+     * @returns {DiscoveryMessage} A new DiscoveryMessage instance
+     */
+    static fromString(data) {
+        const payload = JSON.parse(data);
+        
+        if (payload.type !== 'discovery') {
+            throw new Error('Not a discovery message');
+        }
+        
+        // Extract namespace from network (format: namespace.agentName)
+        const networkParts = payload.network.split('.');
+        if (networkParts.length !== 2) {
+            throw new Error('Invalid network format in discovery message');
+        }
+        
+        const namespace = networkParts[0];
+        return new DiscoveryMessage(namespace, payload.agentName, payload.schemas);
+    }
+    
+    /**
+     * Validate if a payload conforms to discovery message structure
+     * @param {Object} payload - The payload to validate
+     * @returns {boolean} Whether the payload is valid
+     */
+    static isValid(payload) {
+        return (
+            payload &&
+            typeof payload === 'object' &&
+            payload.type === 'discovery' &&
+            typeof payload.network === 'string' &&
+            typeof payload.agentName === 'string' &&
+            Array.isArray(payload.schemas)
+        );
+    }
+}
+
+/**
  * Sets up discovery subscription to find other agents
  */
 async function setupDiscoverySubscription(nc, discoveryTopic, namespace, agentName, discoveredAgents, acceptedNetworks) {
@@ -38,30 +111,37 @@ async function setupDiscoverySubscription(nc, discoveryTopic, namespace, agentNa
             let nonAcceptedNetworks = {}
             for await (const m of discoverySub) {
                 try {
-                    const payloadSetup = JSON.parse(m.string());
+                    // Attempt to parse and validate the discovery message
+                    let discoveryMessage;
+                    try {
+                        discoveryMessage = DiscoveryMessage.fromString(m.string());
+                    } catch (parseError) {
+                        logger.warn('Invalid discovery message format', { error: parseError.message });
+                        continue;
+                    }
 
-                    const network = payloadSetup.network
-                    const networkNamespace = network.split(".")[0]
-                    const networkName = network.split(".")[1]
+                    const network = discoveryMessage.network;
+                    const networkNamespace = network.split(".")[0];
+                    const networkName = network.split(".")[1];
 
                     // Skip self
                     if (network === `${namespace}.${agentName}`) {
-                        continue
+                        continue;
                     }
 
                     // Skip if already processed
                     if (nonAcceptedNetworks[network] === true) {
-                        continue
+                        continue;
                     }
 
                     let isAccepted = false;
                     for (const acceptedNetwork of acceptedNetworks) {
-                        const acceptedNetworkNamespace = acceptedNetwork.split(".")[0]
-                        const acceptedNetworkName = acceptedNetwork.split(".")[1]
+                        const acceptedNetworkNamespace = acceptedNetwork.split(".")[0];
+                        const acceptedNetworkName = acceptedNetwork.split(".")[1];
 
                         if (acceptedNetworkNamespace === networkNamespace && acceptedNetworkName === networkName) {
                             isAccepted = true;
-                            continue
+                            continue;
                         }
                         // Check for wildcard patterns in accepted networks
                         
@@ -85,23 +165,17 @@ async function setupDiscoverySubscription(nc, discoveryTopic, namespace, agentNa
                             isAccepted = true;
                             continue;
                         }
-                        
                     }
 
                     // Skip if not accepted
                     if (!isAccepted) {
                         logger.warn(`Agent ${agentName} does not accept network ${network}`);
-                        nonAcceptedNetworks[network] = true
+                        nonAcceptedNetworks[network] = true;
                         continue;
                     }                
                     
-                    // Validate the payload structure
-                    if (!payloadSetup.agentName || !Array.isArray(payloadSetup.schemas)) {
-                        logger.warn('Invalid discovery payload received', { payload: payloadSetup });
-                        continue;
-                    }
-                    
-                    for (const schema of payloadSetup.schemas) {
+                    // Process the schemas from the discovery message
+                    for (const schema of discoveryMessage.schemas) {
                         // Skip invalid schemas
                         if (!schema || !schema.name) {
                             logger.warn('Invalid schema in discovery payload', { schema });
@@ -110,8 +184,8 @@ async function setupDiscoverySubscription(nc, discoveryTopic, namespace, agentNa
                         
                         const agentKey = `${network}-${schema.name}`;
                         
-                        if (payloadSetup.agentName !== agentName && !discoveredAgents[agentKey]) {
-                            logger.info(`${agentName} discovered agent capability: ${payloadSetup.agentName} with capability ${schema.name}`);
+                        if (discoveryMessage.agentName !== agentName && !discoveredAgents[agentKey]) {
+                            logger.info(`${agentName} discovered agent capability: ${discoveryMessage.agentName} with capability ${schema.name}`);
                             
                             const handoffFunction = async (conversation, state, input) => {
                                 try {
@@ -126,7 +200,7 @@ async function setupDiscoverySubscription(nc, discoveryTopic, namespace, agentNa
                                                             content: input
                                                         })
                                                         const req = await nc.request(
-                                                            payloadSetup.agentName, 
+                                                            discoveryMessage.agentName, 
                                                             message.serialize(), 
                                                             { timeout: TIMEOUT_TASK_REQUEST }
                                                         );
@@ -135,7 +209,7 @@ async function setupDiscoverySubscription(nc, discoveryTopic, namespace, agentNa
                                                     {
                                                         maxRetries: 2,
                                                         onRetry: ({ attempt }) => {
-                                                            logger.warn(`Retrying handoff attempt ${attempt} to ${payloadSetup.agentName}`, {
+                                                            logger.warn(`Retrying handoff attempt ${attempt} to ${discoveryMessage.agentName}`, {
                                                                 schema: schema.name
                                                             });
                                                         }
@@ -144,18 +218,18 @@ async function setupDiscoverySubscription(nc, discoveryTopic, namespace, agentNa
                                                 return response;
                                             } catch (error) {
                                                 throw new HandoffError(
-                                                    `Handoff to agent ${payloadSetup.agentName} failed: ${error.message}`,
+                                                    `Handoff to agent ${discoveryMessage.agentName} failed: ${error.message}`,
                                                     agentName,
-                                                    payloadSetup.agentName,
+                                                    discoveryMessage.agentName,
                                                     { schemaName: schema.name }
                                                 );
                                             }
                                         },
                                         TIMEOUT_TASK_REQUEST,
-                                        `handoff to ${payloadSetup.agentName}`
+                                        `handoff to ${discoveryMessage.agentName}`
                                     );
                                 } catch (error) {
-                                    logger.error(`Handoff error to ${payloadSetup.agentName}`, {
+                                    logger.error(`Handoff error to ${discoveryMessage.agentName}`, {
                                         error,
                                         schema: schema.name
                                     });
@@ -202,13 +276,8 @@ function setupDiscoveryHeartbeat(nc, discoveryTopic, namespace, agentName, disco
     
     return setInterval(async () => {
         try {
-            const heartbeatPayload = {
-                type: 'discovery',
-                network: `${namespace}.${agentName}`,
-                agentName: agentName,
-                schemas: discoverySchemas
-            };
-            await nc.publish(discoveryTopic, JSON.stringify(heartbeatPayload));
+            const discoveryMessage = new DiscoveryMessage(namespace, agentName, discoverySchemas);
+            await nc.publish(discoveryTopic, discoveryMessage.serialize());
             
             // Reset error counter on success
             if (consecutiveErrors > 0) {

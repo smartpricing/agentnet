@@ -13,7 +13,7 @@ spec:
         acceptedNetworks: 
           - "smartchat.*"
   store:
-    type: Postgres
+    type: Memory
   llm:
     provider: Gemini
     model: gemini-2.0-flash
