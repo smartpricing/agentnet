@@ -1,89 +1,88 @@
 import OpenAI from 'openai'
 import { logger } from '../utils/logger.js'
 import { LLMError } from '../errors/index.js'
+import { BaseLLM } from './base.js'
 
-const type = 'openai' 
+/**
+ * OpenAI LLM implementation
+ */
+class OpenAILLM extends BaseLLM {
+	constructor() {
+		super('openai');
+	}
 
-const getClient = async function () {
-	try {
-		if (!process.env.OPENAI_API_KEY) {
+	/**
+	 * Initializes and returns an OpenAI client
+	 * @returns {Promise<OpenAI>} The initialized OpenAI client
+	 * @throws {LLMError} If initialization fails
+	 */
+	async getClient() {
+		this.checkApiKey('OPENAI_API_KEY');
+		
+		try {
+			logger.debug('Initializing OpenAI client');
+			return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+		} catch (error) {
+			logger.error('Failed to initialize OpenAI client', { error });
 			throw new LLMError(
-				'OPENAI_API_KEY environment variable is not set',
-				'openai'
+				`Failed to initialize OpenAI client: ${error.message}`,
+				this.type,
+				{ originalError: error }
 			);
 		}
-		
-		logger.debug('Initializing OpenAI client');
-		return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-	} catch (error) {
-		logger.error('Failed to initialize OpenAI client', { error });
-		throw new LLMError(
-			`Failed to initialize OpenAI client: ${error.message}`,
-			'openai',
-			{ originalError: error }
-		);
 	}
-}
 
-const callModel = async function (llmClientConfig, context) {
-	const client = context.client
-	const toolsAndHandoffsMap = context.toolsAndHandoffsMap
-	const conversation = context.conversation
-	const input = {}	
-	Object.assign(input, llmClientConfig)
-	input['tools'] = toolsAndHandoffsMap.tools
-	input['input'] = conversation
-	
-	logger.debug('Calling OpenAI model', { 
-		model: input.model,
-		conversationLength: conversation.length,
-		toolsCount: toolsAndHandoffsMap.tools.length
-	});
-	
-	try {
-		const response = await client.responses.create(input)
-		logger.debug('OpenAI response received');
-		return response
-	} catch (error) {
-		logger.error('OpenAI API error', { 
-			error,
-			modelName: input.model
+	/**
+	 * Calls the OpenAI model with the provided configuration and context
+	 * @param {Object} llmClientConfig - Configuration for the OpenAI model
+	 * @param {Object} context - Context containing client, tools map and conversation
+	 * @returns {Promise<Object>} The model response
+	 * @throws {LLMError} If the API call fails
+	 */
+	async callModel(llmClientConfig, context) {
+		const { client, toolsAndHandoffsMap, conversation } = context;
+		const input = { ...llmClientConfig };
+		input.tools = toolsAndHandoffsMap.tools;
+		input.input = conversation;
+		
+		logger.debug('Calling OpenAI model', { 
+			model: input.model,
+			conversationLength: conversation.length,
+			toolsCount: toolsAndHandoffsMap.tools.length
 		});
 		
-		throw new LLMError(
-			`OpenAI API error: ${error.message}`,
-			'openai',
-			{
-				statusCode: error.status || error.statusCode,
-				modelName: input.model
-			}
-		);
-	}
-}
-
-const onResponse = async function (state, conversation, toolsAndHandoffsMap, response) {
-	if (response.output_text !== undefined && response.output_text.length > 0) {
-		logger.debug('OpenAI response contains text, returning directly');
-		conversation.push({ role: 'model', parts: [{ text: response.output_text }] });
-		return response.output_text
-	}
-
-	const reasoning = response.output.filter(x => x.type == 'reasoning')
-	const functionCalls = response.output.filter(x => x.type == 'function_call')
-	
-	logger.debug('OpenAI response processing', {
-		reasoningCount: reasoning.length,
-		functionCallCount: functionCalls.length
-	});
-	
-	for (const res of reasoning) {
-		conversation.push(res)
-	}
-
-	for (const toolCall of functionCalls) {
 		try {
-			const args = JSON.parse(toolCall.arguments)
-			const name = toolCall.name
+			const response = await client.responses.create(input);
+			logger.debug('OpenAI response received');
+			return response;
+		} catch (error) {
+			logger.error('OpenAI API error', { 
+				error,
+				modelName: input.model
+			});
+			
+			throw new LLMError(
+				`OpenAI API error: ${error.message}`,
+				this.type,
+				{
+					statusCode: error.status || error.statusCode,
+					modelName: input.model
+				}
+			);
+		}
+	}
+
+	/**
+	 * Handle a specific tool call from OpenAI response
+	 * @param {Object} toolCall - The tool call to process
+	 * @param {Object} state - Current application state
+	 * @param {Array} conversation - The conversation history
+	 * @param {Object} toolsAndHandoffsMap - Map of available tools
+	 */
+	async handleToolCall(toolCall, state, conversation, toolsAndHandoffsMap) {
+		try {
+			const args = JSON.parse(toolCall.arguments);
+			const name = toolCall.name;
 			
 			logger.debug('Executing tool from OpenAI', { 
 				toolName: name,
@@ -91,29 +90,10 @@ const onResponse = async function (state, conversation, toolsAndHandoffsMap, res
 				callId: toolCall.call_id
 			});
 			
-			if (!toolsAndHandoffsMap[name] || !toolsAndHandoffsMap[name].function) {
-				throw new Error(`Tool "${name}" not found or has no function implementation`);
-			}
+			const result = await super.executeToolCall(toolCall, name, args, state, conversation, toolsAndHandoffsMap);
+			conversation.push(toolCall);
 			
-			let result = null
-            if (toolsAndHandoffsMap[name].type === 'handoff') {
-                result = await toolsAndHandoffsMap[name].function(conversation, state, args);
-            } else {
-                result = await toolsAndHandoffsMap[name].function(state, args);
-            }			
-			conversation.push(toolCall)
-            if (toolsAndHandoffsMap[name].type === 'handoff') {
-                console.log("GPT HANDOFF onResponse", name, result)
-                const resultParsed = JSON.parse(result)
-                // Update state with the result
-                if (resultParsed.session) {
-                    for (const key of Object.keys(resultParsed.session)) {
-                        state[key] = resultParsed.session[key]
-                    }
-                }
-            }			
-			
-			const resultString = typeof result == 'string' ? result : JSON.stringify(result)
+			const resultString = typeof result === 'string' ? result : JSON.stringify(result);
 			
 			logger.debug('Tool execution successful', { 
 				toolName: name,
@@ -124,7 +104,7 @@ const onResponse = async function (state, conversation, toolsAndHandoffsMap, res
 				type: "function_call_output",
 				call_id: toolCall.call_id,
 				output: resultString
-			})
+			});
 		} catch (error) {
 			logger.error(`Error executing tool "${toolCall.name}"`, { error });
 			
@@ -137,24 +117,66 @@ const onResponse = async function (state, conversation, toolsAndHandoffsMap, res
 			});
 		}
 	}
-	return null
+
+	/**
+	 * Processes the model response, handling text responses and function calls
+	 * @param {Object} state - Current application state
+	 * @param {Array} conversation - The conversation history
+	 * @param {Object} toolsAndHandoffsMap - Map of available tools
+	 * @param {Object} response - The model response to process
+	 * @returns {Promise<string|null>} Text response or null if processing tool calls
+	 */
+	async onResponse(state, conversation, toolsAndHandoffsMap, response) {
+		if (response.output_text !== undefined && response.output_text.length > 0) {
+			logger.debug('OpenAI response contains text, returning directly');
+			conversation.push({ role: 'model', parts: [{ text: response.output_text }] });
+			return response.output_text;
+		}
+
+		const reasoning = response.output.filter(x => x.type === 'reasoning');
+		const functionCalls = response.output.filter(x => x.type === 'function_call');
+		
+		logger.debug('OpenAI response processing', {
+			reasoningCount: reasoning.length,
+			functionCallCount: functionCalls.length
+		});
+		
+		// Add reasoning to conversation
+		for (const res of reasoning) {
+			conversation.push(res);
+		}
+
+		// Process all tool calls sequentially
+		for (const toolCall of functionCalls) {
+			await this.handleToolCall(toolCall, state, conversation, toolsAndHandoffsMap);
+		}
+		
+		return null;
+	}
+
+	/**
+	 * Adds a user prompt to the conversation
+	 * @param {Array} conversation - The conversation history
+	 * @param {string} formattedPrompt - The formatted user prompt
+	 * @returns {Promise<void>}
+	 */
+	async prompt(conversation, formattedPrompt) {
+		await super.prompt(conversation, formattedPrompt);
+		
+		conversation.push({
+			role: 'user',
+			content: formattedPrompt
+		});
+	}
 }
 
-const prompt = async function (conversation, formattedPrompt) {
-	logger.debug('Adding user prompt to conversation', {
-		promptPreview: formattedPrompt.substring(0, 100)
-	});
-	
-	conversation.push({
-		role: 'user',
-		content: formattedPrompt
-	})
-}
+// Create a singleton instance
+const openaiLLM = new OpenAILLM();
 
 export default {
-	type,
-	getClient,
-	prompt,
-	callModel,
-	onResponse
+	type: openaiLLM.type,
+	getClient: openaiLLM.getClient.bind(openaiLLM),
+	prompt: openaiLLM.prompt.bind(openaiLLM),
+	callModel: openaiLLM.callModel.bind(openaiLLM),
+	onResponse: openaiLLM.onResponse.bind(openaiLLM)
 }

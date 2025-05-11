@@ -1,11 +1,11 @@
 {
   "name": "agentnet",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "type": "module",
   "description": "Agent library used by Smartness",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --experimental-vm-modules ./node_modules/.bin/jest --rootDir=src/tests"
   },
   "author": "",
   "license": "ISC",
@@ -19,5 +19,8 @@
     "redis": "^5.0.1",
     "uuid": "^11.1.0",
     "yaml": "^2.7.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
   }
 }

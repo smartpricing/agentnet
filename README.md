@@ -4,6 +4,7 @@
 
 - [Introduction](#introduction)
 - [Installation](#installation)
+- [API Keys Configuration](#api-keys-configuration)
 - [Super Simple Example (Quick Start)](#super-simple-example-quick-start)
 - [Declarative Agent Definitions (YAML & JavaScript)](#declarative-agent-definitions-yaml--javascript)
 - [State Management](#state-management)
@@ -40,6 +41,32 @@ Key aspects include:
 ```bash
 npm install agentnet
 ```
+
+## API Keys Configuration
+
+Agentnet requires API keys for accessing the LLM providers you plan to use. The keys should be set as environment variables:
+
+- **Gemini**: Set `GEMINI_API_KEY` for using Google's Gemini models
+- **OpenAI**: Set `OPENAI_API_KEY` for using OpenAI's GPT models
+
+You can set these environment variables in your deployment environment or use a `.env` file with a package like `dotenv`:
+
+```javascript
+// In your main file, before importing agentnet
+import dotenv from 'dotenv';
+dotenv.config();
+
+// Now the API keys are available to agentnet
+import { Agent, Gemini } from "agentnet";
+```
+
+Example `.env` file:
+```
+GEMINI_API_KEY=your_gemini_api_key_here
+OPENAI_API_KEY=your_openai_api_key_here
+```
+
+> Note: If you try to use an LLM provider without setting the corresponding API key, Agentnet will throw an error indicating which environment variable is missing.
 
 ## Super Simple Example (Quick Start)
 
@@ -130,6 +157,47 @@ spec:
       description: Get pricing information for a room.
       # parameters schema for the discovery...
 ```
+
+### API Versioning
+
+Agentnet supports API versioning to maintain backwards compatibility while evolving the platform:
+
+```yaml
+apiVersion: agentnet/v1alpha1  # Specify which API version this definition uses
+```
+
+Currently supported API versions:
+
+- `agentnet/v1alpha1`: Current API version
+
+When creating agent definitions, you should specify which API version you're targeting. This allows Agentnet to:
+
+1. Apply the correct validation rules
+2. Handle differences in configuration format
+3. Maintain backward compatibility with older definitions
+4. Enable new features only available in newer versions
+
+If you don't specify an `apiVersion`, Agentnet will default to `agentnet/v1alpha1` but will log a warning.
+
+#### Version Migration Tool
+
+Agentnet includes a command-line tool to help migrate your agent definitions to newer API versions:
+
+```bash
+# Migrate a YAML file to the latest version
+node src/tools/migrate-version.js ./agents.yaml
+
+# Specify a target version
+node src/tools/migrate-version.js ./agents.yaml --version agentnet.io/v1alpha1
+
+# Write to a specific output file
+node src/tools/migrate-version.js ./agents.yaml --output ./agents-new.yaml
+
+# Just check if migration is needed without modifying
+node src/tools/migrate-version.js ./agents.yaml --check
+```
+
+This tool helps you keep your agent definitions up-to-date with the latest features while maintaining compatibility with the Agentnet platform.
 
 ### Dynamic Implementation (JavaScript)
 

@@ -23,7 +23,8 @@ const DEFAULT_CONFIG = {
     metadata: {
         name: "default",
         namespace: "default",
-        description: "A default agent"
+        description: "A default agent",
+        apiVersion: "agentnet/v1alpha1" // Default API version
     },
     runner: { 
         maxRuns: 10
@@ -41,7 +42,8 @@ const AGENT_CONFIG_SCHEMA = {
             properties: {
                 name: { type: 'string' },
                 namespace: { type: 'string' },
-                description: { type: 'string' }
+                description: { type: 'string' },
+                apiVersion: { type: 'string' }
             },
             required: ['name', 'namespace']
         },

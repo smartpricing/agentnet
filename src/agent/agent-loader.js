@@ -2,6 +2,18 @@ import fs from 'fs'
 import { parse } from 'yaml'
 import { Gemini } from "../index.js"
 import { Agent } from "./agent.js"
+import { logger } from "../utils/logger.js"
+import { ConfigurationError } from "../errors/index.js"
+import { validateApiVersion, DEFAULT_API_VERSION, API_VERSIONS } from '../utils/version.js'
+
+/**
+ * Version handlers for different API versions
+ */
+const VERSION_HANDLERS = {
+    'smartagent.io/v1alpha1': processV1Alpha1Definition,
+    'agentnet.io/v1alpha1': processV1Alpha1Definition
+    // Additional version handlers can be added here as the API evolves
+};
 
 /**
  * Loads agent definitions from a YAML file
@@ -47,10 +59,10 @@ function parseAgentDefinitionsFromYaml(yamlContent) {
             if (isValidAgentDefinition(definition)) {
                 agentDefinitions.push(definition);
             } else {
-                console.warn("Skipping invalid or non-AgentDefinition document in YAML.");
+                logger.warn("Skipping invalid or non-AgentDefinition document in YAML.");
             }
         } catch (error) {
-            console.warn(`Failed to parse YAML document: ${error.message}`);
+            logger.warn(`Failed to parse YAML document: ${error.message}`);
         }
     }
     
@@ -64,6 +76,58 @@ function parseAgentDefinitionsFromYaml(yamlContent) {
  */
 function isValidAgentDefinition(definition) {
     return definition && definition.kind === 'AgentDefinition' && definition.spec;
+}
+
+/**
+ * Gets the appropriate version handler for a definition
+ * @param {object} definition - Agent definition
+ * @returns {Function} Version handler function
+ * @throws {ConfigurationError} If version is unsupported
+ */
+function getVersionHandler(definition) {
+    // Validate the API version using our utility
+    const versionData = validateApiVersion(definition);
+    const apiVersion = versionData.version;
+    
+    // Get the appropriate handler for this version
+    const handler = VERSION_HANDLERS[apiVersion];
+    
+    if (!handler) {
+        throw new ConfigurationError(
+            `No implementation handler for apiVersion '${apiVersion}'`,
+            { apiVersion, supportedHandlers: Object.keys(VERSION_HANDLERS) }
+        );
+    }
+    
+    return handler;
+}
+
+/**
+ * Process a v1alpha1 agent definition
+ * @param {object} definition - Agent definition
+ * @param {object} agentBuilder - Agent builder
+ * @param {object} bindings - IO and store bindings
+ * @returns {object} Processed agent interface and tool map
+ */
+async function processV1Alpha1Definition(definition, agentBuilder, bindings) {
+    const spec = definition.spec;
+    
+    // Add apiVersion to agent metadata
+    agentBuilder.setMetadata({
+        ...agentBuilder._config.metadata,
+        apiVersion: definition.apiVersion || DEFAULT_API_VERSION
+    });
+    
+    // Configure different aspects of the agent
+    agentBuilder = configureIO(agentBuilder, spec.io, bindings);
+    agentBuilder = configureStore(agentBuilder, spec.store, bindings);
+    agentBuilder = await configureLLM(agentBuilder, spec.llm);
+    agentBuilder = configureDiscoverySchemas(agentBuilder, spec.discoverySchemas);
+    
+    // Set up tools
+    const toolMap = configureTools(agentBuilder, spec.tools);
+    
+    return { agentBuilder, toolMap };
 }
 
 /**
@@ -237,7 +301,6 @@ async function AgentLoader(agentsDefinitions, config = {}) {
                 throw new Error(`Invalid agent definition: missing spec`);
             }
             
-            const spec = definition.spec;
             const metadata = definition.metadata || { 
                 name: "default", 
                 description: "Agent from definition" 
@@ -250,21 +313,21 @@ async function AgentLoader(agentsDefinitions, config = {}) {
             // Initialize agent builder with metadata
             let agentBuilder = Agent().setMetadata(metadata);
             
-            // Configure different aspects of the agent
-            agentBuilder = configureIO(agentBuilder, spec.io, bindings);
-            agentBuilder = configureStore(agentBuilder, spec.store, bindings);
-            agentBuilder = await configureLLM(agentBuilder, spec.llm);
-            agentBuilder = configureDiscoverySchemas(agentBuilder, spec.discoverySchemas);
+            // Get the appropriate version handler
+            const versionHandler = getVersionHandler(definition);
             
-            // Set up tools
-            const toolMap = configureTools(agentBuilder, spec.tools);
+            // Process according to API version
+            const { agentBuilder: updatedBuilder, toolMap } = 
+                await versionHandler(definition, agentBuilder, bindings);
             
             // Create the agent interface
-            loadedAgents[metadata.name] = createAgentInterface(agentBuilder, toolMap);
+            loadedAgents[metadata.name] = createAgentInterface(updatedBuilder, toolMap);
+            
+            logger.info(`Agent '${metadata.name}' loaded successfully with apiVersion: ${definition.apiVersion || DEFAULT_API_VERSION}`);
             
         } catch (error) {
             const agentName = definition.metadata?.name || 'Unnamed Agent';
-            console.error(`Failed to load agent "${agentName}": ${error.message}`);
+            logger.error(`Failed to load agent "${agentName}": ${error.message}`, { error });
             // Optional: decide whether to throw or just log and continue
             // throw error;
         }
