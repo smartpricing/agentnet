@@ -1,5 +1,18 @@
 # Agentnet
 
+## Table of Contents
+
+- [Introduction](#introduction)
+- [Installation](#installation)
+- [Super Simple Example (Quick Start)](#super-simple-example-quick-start)
+- [Declarative Agent Definitions (YAML & JavaScript)](#declarative-agent-definitions-yaml--javascript)
+- [State Management](#state-management)
+- [Network Topologies & Filtering](#network-topologies--filtering)
+- [Available LLMs, Stores, and IO](#available-llms-stores-and-io)
+- [Direct Access to Agent Fluent Interface](#direct-access-to-agent-fluent-interface)
+- [Examples](#examples)
+
+
 ## Introduction
 
 Agentnet empowers you to build sophisticated autonomous systems by creating and connecting intelligent agents. These agents can be defined statically for clear, version-controlled structures, or dynamically for flexible runtime behaviors. Agentnet facilitates the creation of powerful network meshes where agents can collaborate seamlessly.
@@ -20,6 +33,7 @@ Key aspects include:
 *   **LLM Provider Agnostic**: Supports multiple LLM providers (e.g., Gemini, OpenAI GPT) and is extensible.
 *   **Persistent Sessions**: Maintain conversation context and state across multiple interactions using configurable storage backends.
 *   **Network Filtering**: Control agent communication with powerful wildcard-based network filtering for enhanced security and efficiency.
+
 
 ## Installation
 
@@ -82,7 +96,6 @@ metadata:
 spec:
   io: # Transport and network configuration
     - type: NatsIO
-      network: "smartchat.bookingAgent" # Agent's own network identifier
       bindings:
         discoveryTopic: "smartness.discovery"
         acceptedNetworks:
@@ -347,13 +360,12 @@ const compiledTravelAgent = await travelAgent.compile();
 // console.log(response.getContent());
 ```
 
-## Links to Examples
+## Examples
 
-*   **Simple Agent Example**: For beginners, the `examples/simple/simple.js` provides a minimal implementation of an accommodation agent, perfect for understanding the basic concepts of agent definition and tool binding.
+*   **Simple Agent Example**: For beginners, the [`examples/simple/README.md`](https://github.com/yourusername/agentnet/blob/main/examples/simple/README.md) provides a minimal implementation of an accommodation agent, perfect for understanding the basic concepts of agent definition and tool binding.
 
-*   **Smart Shopping/Booking Example**: See a multi-agent system in action for a smart booking scenario in `examples/smartness/index.js`. This demonstrates concepts like agent discovery, handoffs, and tool usage in a practical setup.
+*   **Booking Example**: See a multi-agent system in action for a smart booking scenario in [`examples/smartness/README.md`](https://github.com/yourusername/agentnet/blob/main/examples/smartness/README.md). This demonstrates concepts like agent discovery, handoffs, and tool usage in a practical setup.
 
-*   **Customer Support Example**: Explore a customer support system with specialized agents for different support domains in `examples/customer-support/index.js`. This shows how agents can collaborate to resolve complex customer inquiries.
+*   **Customer Support Example**: Explore a customer support system with specialized agents for different support domains in [`examples/customer-support/README.md`](https://github.com/yourusername/agentnet/blob/main/examples/customer-support/README.md). This shows how agents can collaborate to resolve complex customer inquiries.
 
-*   **Event Planner Example**: Check out the event planning system in `examples/event-planner/index.js` that demonstrates how agents can coordinate to manage calendars, find suitable time slots, and handle event scheduling.
-
+*   **Event Planner Example**: Check out the event planning system in [`examples/event-planner/README.md`](https://github.com/yourusername/agentnet/blob/main/examples/event-planner/README.md) that demonstrates how agents can coordinate to manage calendars, find suitable time slots, and handle event scheduling.

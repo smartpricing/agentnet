@@ -7,7 +7,6 @@ metadata:
 spec:
   io:
     - type: NatsIO
-      network: smartchat
       bindings:
         discoveryTopic: smartness.discovery
         acceptedNetworks: 
