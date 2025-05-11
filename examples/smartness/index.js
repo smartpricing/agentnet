@@ -1,4 +1,4 @@
-import { AgentLoaderFile, AgentClient, NatsIO, Bindings, Message, PostgresStore, RedisStore, MemoryStore } from "../index.js"
+import { AgentLoaderFile, AgentClient, NatsIO, Bindings, Message, PostgresStore, RedisStore, MemoryStore } from "../../src/index.js"
 
 // NatsIO instance
 const io = NatsIO({
@@ -6,7 +6,7 @@ const io = NatsIO({
 })
 
 // Load the agents from the YAML file
-const agents = await AgentLoaderFile('./src/examples/agents-smartness.yaml', {
+const agents = await AgentLoaderFile('./examples/smartness/agents-smartness.yaml', {
     bindings: { [Bindings.NatsIO]: io, [Bindings.Postgres]: PostgresStore(), [Bindings.Redis]: RedisStore(), [Bindings.Memory]: MemoryStore() }
 })
 
