@@ -97,8 +97,13 @@ const onResponse = async function (state, conversation, toolsAndHandoffsMap, res
             if (!toolsAndHandoffsMap[name] || !toolsAndHandoffsMap[name].function) {
                 throw new Error(`Tool "${name}" not found or has no function implementation`);
             }
-            
-            let result = await toolsAndHandoffsMap[name].function(conversation, state, args);
+
+            let result = null
+            if (toolsAndHandoffsMap[name].type === 'handoff') {
+                result = await toolsAndHandoffsMap[name].function(conversation, state, args);
+            } else {
+                result = await toolsAndHandoffsMap[name].function(state, args);
+            }
             if (toolsAndHandoffsMap[name].type === 'handoff') {
                 const resultParsed = JSON.parse(result)
                 // Update state with the result

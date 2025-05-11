@@ -95,7 +95,12 @@ const onResponse = async function (state, conversation, toolsAndHandoffsMap, res
 				throw new Error(`Tool "${name}" not found or has no function implementation`);
 			}
 			
-			let result = await toolsAndHandoffsMap[name].function(conversation, state, args)
+			let result = null
+            if (toolsAndHandoffsMap[name].type === 'handoff') {
+                result = await toolsAndHandoffsMap[name].function(conversation, state, args);
+            } else {
+                result = await toolsAndHandoffsMap[name].function(state, args);
+            }			
 			conversation.push(toolCall)
             if (toolsAndHandoffsMap[name].type === 'handoff') {
                 console.log("GPT HANDOFF onResponse", name, result)

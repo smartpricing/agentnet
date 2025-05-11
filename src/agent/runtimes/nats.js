@@ -331,6 +331,7 @@ async function createTaskHandler(nc, agentName, processingFunction) {
                 if (!payload || typeof payload !== 'object') {
                     throw new Error('Invalid payload: not a JSON object');
                 }
+
                 const message = new Message(payload)
                 const input = message.getContent()
                 const session = message.getSession()

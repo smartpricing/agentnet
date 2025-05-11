@@ -95,7 +95,6 @@ export async function AgentRuntime(agentConfig) {
             
             // Execute agent runtime
             const result = await taskFunction(storeState.state, storeState.conversation, promptContent);
-
             // Process result through response hook
             const responseMessage = await response(storeState.state, storeState.conversation, result);
             // Save session state and session data

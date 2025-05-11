@@ -1,6 +1,6 @@
-# Agentnet Framework
+# Agentnet
 
-Agentnet is a flexible, extensible framework for building and orchestrating LLM-powered agents that can communicate, collaborate, and leverage tools to solve complex tasks. It is specifically designed to develop autonomous networks of agents that can work together to accomplish sophisticated objectives with minimal human intervention.
+Agentnet is a flexible, extensible library for building and orchestrating LLM-powered agents that can communicate, collaborate, and leverage tools to solve complex tasks. It is specifically designed to develop autonomous networks of agents that can work together to accomplish sophisticated objectives with minimal human intervention.
 
 ## Table of Contents
 
