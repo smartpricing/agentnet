@@ -271,7 +271,6 @@ Control inter-agent communication using `acceptedNetworks` in the agent's I/O co
 spec:
   io:
     - type: NatsIO
-      network: "smartchat.orchestrator" # This agent's identifier
       bindings:
         discoveryTopic: "smartness.discovery"
         acceptedNetworks:
@@ -282,6 +281,9 @@ spec:
 # ...
 ```
 Agents will only process discovery messages and requests from networks matching their acceptance patterns. The `network` field (e.g., `smartchat.orchestrator`) defines the agent's own address on the network.
+
+In Agentnet, each agent is uniquely identified by a combination of its namespace and name, formatted as `namespace.name`. This identifier serves as the agent's address on the network.
+
 
 ## Available LLMs, Stores, and IO
 
@@ -362,10 +364,10 @@ const compiledTravelAgent = await travelAgent.compile();
 
 ## Examples
 
-*   **Simple Agent Example**: For beginners, the [`examples/simple/README.md`](https://github.com/yourusername/agentnet/blob/main/examples/simple/README.md) provides a minimal implementation of an accommodation agent, perfect for understanding the basic concepts of agent definition and tool binding.
+*   **Simple Agent Example**: For beginners, the [`examples/simple/README.md`](https://github.com/smartpricing/agentnet/blob/master/examples/simple/README.md) provides a minimal implementation of an accommodation agent, perfect for understanding the basic concepts of agent definition and tool binding.
 
-*   **Booking Example**: See a multi-agent system in action for a smart booking scenario in [`examples/smartness/README.md`](https://github.com/yourusername/agentnet/blob/main/examples/smartness/README.md). This demonstrates concepts like agent discovery, handoffs, and tool usage in a practical setup.
+*   **Booking Example**: See a multi-agent system in action for a smart booking scenario in [`examples/smartness/README.md`](https://github.com/smartpricing/agentnet/blob/master/examples/smartness/README.md). This demonstrates concepts like agent discovery, handoffs, and tool usage in a practical setup.
 
-*   **Customer Support Example**: Explore a customer support system with specialized agents for different support domains in [`examples/customer-support/README.md`](https://github.com/yourusername/agentnet/blob/main/examples/customer-support/README.md). This shows how agents can collaborate to resolve complex customer inquiries.
+*   **Customer Support Example**: Explore a customer support system with specialized agents for different support domains in [`examples/customer-support/README.md`](https://github.com/smartpricing/agentnet/blob/master/examples/customer-support/README.md). This shows how agents can collaborate to resolve complex customer inquiries.
 
-*   **Event Planner Example**: Check out the event planning system in [`examples/event-planner/README.md`](https://github.com/yourusername/agentnet/blob/main/examples/event-planner/README.md) that demonstrates how agents can coordinate to manage calendars, find suitable time slots, and handle event scheduling.
+*   **Event Planner Example**: Check out the event planning system in [`examples/event-planner/README.md`](https://github.com/smartpricing/agentnet/blob/master/examples/event-planner/README.md) that demonstrates how agents can coordinate to manage calendars, find suitable time slots, and handle event scheduling.
