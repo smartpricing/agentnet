@@ -123,6 +123,26 @@ export function postgresStore(config = null) {
 				// Test connection
 				try {
 					await db.connect();
+					
+					// Create schema if not exists
+					await db.none('CREATE SCHEMA IF NOT EXISTS $1:name', [connectionConfig.schema]);
+					
+					// Create table if not exists
+					await db.none(`
+						CREATE TABLE IF NOT EXISTS $1:name.$2:name (
+							id UUID PRIMARY KEY,
+							state_id TEXT, 
+							state TEXT,
+							updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+						)
+					`, [connectionConfig.schema, connectionConfig.table]);
+					
+					// Create unique index if not exists
+					await db.none(`
+						CREATE UNIQUE INDEX IF NOT EXISTS idx_acc_agent_chat_id 
+						ON $1:name.$2:name(state_id)
+					`, [connectionConfig.schema, connectionConfig.table]);
+					
 				} catch (error) {
 					throw error;
 				}
@@ -140,7 +160,7 @@ export function postgresStore(config = null) {
 			const id = uuid();
 			try {
 				return await db.one(
-					'INSERT INTO $1:name.$2:name (state_id, state, id) VALUES ($3, $4, $5) ON CONFLICT (state_id) DO UPDATE SET state=$4 RETURNING id', 
+					'INSERT INTO $1:name.$2:name (state_id, state, id) VALUES ($3, $4, $5) ON CONFLICT (state_id) DO UPDATE SET state=$4, updated_at=CURRENT_TIMESTAMP RETURNING id', 
 					[connectionConfig.schema, connectionConfig.table, key, value, id]
 				);
 			} catch (error) {

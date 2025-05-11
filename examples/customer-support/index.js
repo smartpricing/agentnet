@@ -360,7 +360,7 @@ async function main() {
   
   console.log("\nTriage Agent Response:");
   console.log(res.getContent());
-  /*
+  
   // For demonstration purposes, let's simulate a complete flow through the technical agent
   console.log("\nRouting to Technical Agent...");
   const res2 = await client.queryIo(natsIO, 'technicalAgent', new Message({
@@ -398,7 +398,7 @@ async function main() {
   
   console.log("Follow-up Agent Response:");
   console.log(res3.getContent());
-  */
+  
   console.log("\nCustomer support workflow complete!");
 }
 

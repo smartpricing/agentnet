@@ -1,0 +1,318 @@
+---
+apiVersion: smartagent.io/v1alpha1
+kind: AgentDefinition
+metadata:
+  name: plannerAgent
+  namespace: eventPlanner
+spec:
+  io:
+    - type: NatsIO
+      bindings:
+        discoveryTopic: eventPlanner.discovery
+        acceptedNetworks: 
+          - "eventPlanner.*"
+  store:
+    type: Memory
+  llm:
+    provider: Gemini
+    model: gemini-2.0-flash
+    systemInstruction: |
+      You are an intelligent event planning assistant. Your role is to:
+      1. Help users create and manage calendar events
+      2. Provide clear information about scheduled events
+      3. Update or delete events as requested
+      4. Suggest optimal scheduling based on calendar availability
+      
+      Be proactive, helpful, and respectful of users' time. Ensure all events have
+      the necessary details like title, date, time, and any special requirements.
+    config:
+      temperature: 0.3
+      toolConfig:
+        functionCallingConfig:
+          mode: 'auto'
+  
+  tools:
+    - name: createEvent
+      description: Create a new calendar event
+      parameters:
+        type: object
+        properties:
+          title:
+            type: string
+            description: The title or name of the event
+          startDateTime:
+            type: string
+            description: Start date and time in ISO format (YYYY-MM-DDTHH:MM:SS)
+          endDateTime:
+            type: string
+            description: End date and time in ISO format (YYYY-MM-DDTHH:MM:SS)
+          description:
+            type: string
+            description: Optional description of the event
+          location:
+            type: string
+            description: Optional location of the event
+          participants:
+            type: array
+            items:
+              type: string
+            description: Optional list of participants' emails
+          reminders:
+            type: array
+            items:
+              type: object
+              properties:
+                time:
+                  type: integer
+                  description: Time before event in minutes
+                type:
+                  type: string
+                  description: Type of reminder (email, notification)
+            description: Optional reminders for the event
+        required:
+          - title
+          - startDateTime
+          - endDateTime
+    
+    - name: listEvents
+      description: List calendar events within a date range
+      parameters:
+        type: object
+        properties:
+          startDate:
+            type: string
+            description: Start date in YYYY-MM-DD format
+          endDate:
+            type: string
+            description: End date in YYYY-MM-DD format
+          maxResults:
+            type: integer
+            description: Maximum number of events to return
+        required:
+          - startDate
+          - endDate
+    
+    - name: getEventDetails
+      description: Get details of a specific event
+      parameters:
+        type: object
+        properties:
+          eventId:
+            type: string
+            description: The ID of the event to retrieve
+        required:
+          - eventId
+    
+    - name: updateEvent
+      description: Update an existing calendar event
+      parameters:
+        type: object
+        properties:
+          eventId:
+            type: string
+            description: The ID of the event to update
+          updates:
+            type: object
+            description: Fields to update (title, startDateTime, endDateTime, description, location)
+        required:
+          - eventId
+          - updates
+    
+    - name: deleteEvent
+      description: Delete a calendar event
+      parameters:
+        type: object
+        properties:
+          eventId:
+            type: string
+            description: The ID of the event to delete
+          notifyParticipants:
+            type: boolean
+            description: Whether to notify participants about the cancellation
+        required:
+          - eventId
+    
+    - name: checkAvailability
+      description: Check availability for a potential time slot
+      parameters:
+        type: object
+        properties:
+          startDateTime:
+            type: string
+            description: Start date and time in ISO format (YYYY-MM-DDTHH:MM:SS)
+          endDateTime:
+            type: string
+            description: End date and time in ISO format (YYYY-MM-DDTHH:MM:SS)
+          participants:
+            type: array
+            items:
+              type: string
+            description: Optional list of participants to check availability for
+        required:
+          - startDateTime
+          - endDateTime
+  
+  discoverySchemas:
+    - name: planner_agent_query
+      description: Manage calendar events including creation, listing, updating, and deletion
+      parameters:
+        type: object
+        properties:
+          request:
+            type: string
+            description: The user's event management request
+          context:
+            type: object
+            description: Additional context about the request
+        required:
+          - request
+
+---
+apiVersion: smartagent.io/v1alpha1
+kind: AgentDefinition
+metadata:
+  name: eventFinderAgent
+  namespace: eventPlanner
+spec:
+  io:
+    - type: NatsIO
+      bindings:
+        discoveryTopic: eventPlanner.discovery
+  store:
+    type: Memory
+  llm:
+    provider: Gemini
+    model: gemini-2.0-flash
+    systemInstruction: |
+      You are an event finder assistant specialized in searching and filtering events.
+      Your role is to:
+      1. Help users find specific events in their calendar
+      2. Filter events by various criteria (date range, participants, keywords, etc.)
+      3. Identify scheduling conflicts
+      4. Suggest optimal meeting times
+      
+      Be precise, efficient, and thorough in your search results. Provide clear
+      and concise information to help users quickly understand their calendar situation.
+    config:
+      temperature: 0.3
+      toolConfig:
+        functionCallingConfig:
+          mode: 'auto'
+  
+  tools:
+    - name: searchEvents
+      description: Search for events matching specific criteria
+      parameters:
+        type: object
+        properties:
+          query:
+            type: string
+            description: Free text search query
+          startDate:
+            type: string
+            description: Optional start date in YYYY-MM-DD format
+          endDate:
+            type: string
+            description: Optional end date in YYYY-MM-DD format
+          participants:
+            type: array
+            items:
+              type: string
+            description: Optional list of participants to filter by
+          locations:
+            type: array
+            items:
+              type: string
+            description: Optional list of locations to filter by
+          maxResults:
+            type: integer
+            description: Maximum number of events to return
+        required:
+          - query
+    
+    - name: findConflicts
+      description: Find scheduling conflicts within a date range
+      parameters:
+        type: object
+        properties:
+          startDate:
+            type: string
+            description: Start date in YYYY-MM-DD format
+          endDate:
+            type: string
+            description: End date in YYYY-MM-DD format
+          participants:
+            type: array
+            items:
+              type: string
+            description: Optional list of participants to check conflicts for
+        required:
+          - startDate
+          - endDate
+    
+    - name: suggestMeetingTimes
+      description: Suggest available meeting times for all participants
+      parameters:
+        type: object
+        properties:
+          participants:
+            type: array
+            items:
+              type: string
+            description: List of participants' emails
+          duration:
+            type: integer
+            description: Required meeting duration in minutes
+          earliestDate:
+            type: string
+            description: Earliest date to consider in YYYY-MM-DD format
+          latestDate:
+            type: string
+            description: Latest date to consider in YYYY-MM-DD format
+          workingHoursStart:
+            type: string
+            description: Start of working hours in HH:MM format
+          workingHoursEnd:
+            type: string
+            description: End of working hours in HH:MM format
+        required:
+          - participants
+          - duration
+          - earliestDate
+          - latestDate
+    
+    - name: getFreeBusy
+      description: Get free/busy information for participants
+      parameters:
+        type: object
+        properties:
+          participants:
+            type: array
+            items:
+              type: string
+            description: List of participants' emails
+          startDate:
+            type: string
+            description: Start date in YYYY-MM-DD format
+          endDate:
+            type: string
+            description: End date in YYYY-MM-DD format
+        required:
+          - participants
+          - startDate
+          - endDate
+  
+  discoverySchemas:
+    - name: event_finder_query
+      description: Search for events and find optimal meeting times
+      parameters:
+        type: object
+        properties:
+          search:
+            type: string
+            description: The user's search or scheduling query
+          filters:
+            type: object
+            description: Additional filter criteria
+        required:
+          - search 
