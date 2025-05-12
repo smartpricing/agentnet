@@ -15,7 +15,6 @@ import {
 // Constants
 const HEARTBEAT_INTERVAL = 1000;
 const TIMEOUT_TASK_REQUEST = 60000;
-const MAX_RECONNECT_ATTEMPTS = 5;
 
 /**
  * NATS implementation of the Transport interface
@@ -225,13 +224,14 @@ export class NatsTransport extends Transport {
                                 continue;
                             }
                         }
+                        
 
                         // Skip if not accepted
                         if (!isAccepted) {
                             logger.warn(`Agent ${agentName} does not accept network ${network}`);
                             nonAcceptedNetworks[network] = true;
                             continue;
-                        }                
+                        }               
                         
                         // Process the schemas from the discovery message
                         for (const schema of discoveryMessage.schemas) {
@@ -242,7 +242,6 @@ export class NatsTransport extends Transport {
                             }
                             
                             const agentKey = `${network}-${schema.name}`;
-                            
                             if (discoveryMessage.agentName !== agentName && !discoveredAgents[agentKey]) {
                                 logger.info(`${agentName} discovered agent capability: ${discoveryMessage.agentName} with capability ${schema.name}`);
                                 

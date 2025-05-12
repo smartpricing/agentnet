@@ -65,6 +65,7 @@ class GeminiLLM extends BaseLLM {
       });
       return res;
     } catch (error) {
+      console.log(error)
       logger.error('Gemini API error', { 
         error,
         modelName: input.model

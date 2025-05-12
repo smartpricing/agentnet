@@ -1,6 +1,7 @@
 import fs from 'fs'
 import { parse } from 'yaml'
 import { Gemini } from "../index.js"
+import { GPT } from "../index.js"
 import { Agent } from "./agent.js"
 import { logger } from "../utils/logger.js"
 import { ConfigurationError } from "../errors/index.js"
@@ -10,8 +11,7 @@ import { validateApiVersion, DEFAULT_API_VERSION, API_VERSIONS } from '../utils/
  * Version handlers for different API versions
  */
 const VERSION_HANDLERS = {
-    'smartagent.io/v1alpha1': processV1Alpha1Definition,
-    'agentnet.io/v1alpha1': processV1Alpha1Definition
+    'agentnet/v1alpha1': processV1Alpha1Definition
     // Additional version handlers can be added here as the API evolves
 };
 
@@ -139,6 +139,9 @@ async function loadLlmProvider(providerName) {
     if (providerName === 'Gemini') {
         return Gemini;
     }
+    if (providerName === 'GPT') {
+        return GPT;
+    }    
     
     try {
         return global[providerName] || await import(providerName);
@@ -209,11 +212,14 @@ async function configureLLM(agentBuilder, llmSpec) {
     
     const llmProviderInstance = await loadLlmProvider(llmSpec.provider);
     
-    return agentBuilder.withLLM(llmProviderInstance, {
-        model: llmSpec.model,
-        systemInstruction: llmSpec.systemInstruction,
-        config: llmSpec.config
-    });
+    const config = {}
+    for (const key in llmSpec) {
+        if (key !== 'provider') {
+            config[key] = llmSpec[key];
+        }
+    }
+
+    return agentBuilder.withLLM(llmProviderInstance, config);
 }
 
 /**

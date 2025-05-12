@@ -115,7 +115,7 @@ Define agent metadata, LLM configurations, transport, tools, and discovery schem
 
 ```yaml
 ---
-apiVersion: agentnet.io/v1alpha1
+apiVersion: agentnet/v1alpha1
 kind: AgentDefinition
 metadata:
   name: bookingAgent

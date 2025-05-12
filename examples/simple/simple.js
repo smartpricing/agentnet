@@ -1,7 +1,7 @@
-import { AgentLoaderJSON, Message, Bindings, PostgresStore } from "../index.js"
+import { AgentLoaderJSON, Message, Bindings, MemoryStore } from "../../src/index.js"
 
 const agentDefinition = {
-    "apiVersion": "smartagent.io/v1alpha1",
+    "apiVersion": "agentnet/v1alpha1",
     "kind": "AgentDefinition",
     "metadata": {
       "name": "accomodationAgent",
@@ -9,25 +9,18 @@ const agentDefinition = {
     },
     "spec": {
       "store": {
-        "type": "Postgres",
+        "type": "Memory",
       },
       "llm": {
-        "provider": "Gemini",
-        "model": "gemini-2.0-flash",
-        "systemInstruction": "You are a highly advanced accomodation manager agent. \nPrioritize clarity and helpfulness.\nUse tools effectively to gather information.\n",
-        "config": {
-          "temperature": 0.5,
-          "toolConfig": {
-            "functionCallingConfig": {
-              "mode": "auto"
-            }
-          }
-        }
+        "provider": "GPT",
+        "model": "gpt-4o-mini",
+        "instructions": "You are a highly advanced accomodation manager agent. \nPrioritize clarity and helpfulness.\nUse tools effectively to gather information."
       },
       "tools": [
         {
-          "name": "getRoomsListTool",
+          "name": "get_rooms_list_tool",
           "description": "Retrieves a list of available rooms based on criteria.",
+          "type": "function",
           "parameters": {
             "type": "object",
             "properties": {
@@ -51,8 +44,9 @@ const agentDefinition = {
           }
         },
         {
-          "name": "getRoomDetailTool",
+          "name": "get_room_detail_tool",
           "description": "Retrieves detailed information about a specific room.",
+          "type": "function",
           "parameters": {
             "type": "object",
             "properties": {
@@ -73,15 +67,15 @@ const agentDefinition = {
 // Load the agent definition
 const agents = await AgentLoaderJSON(agentDefinition, {
     bindings: {
-        [Bindings.Postgres]: PostgresStore()
+        [Bindings.Memory]: MemoryStore()
     }
 })
 
 // Add the binding tools to the agent
-agents.accomodationAgent.tools.getRoomsListTool.bind(async (state, input) => {
+agents.accomodationAgent.tools.get_rooms_list_tool.bind(async (state, input) => {
     return { answer: "We have Double room with a view of the sea and a single room with a view of the pool, and a suite with a view of the city." }
 })
-agents.accomodationAgent.tools.getRoomDetailTool.bind(async (state, input) => {
+agents.accomodationAgent.tools.get_room_detail_tool.bind(async (state, input) => {
     return { answer: "The Double room with a view of the sea has a king size bed, a private balcony, and a view of the sea." }
 })
 

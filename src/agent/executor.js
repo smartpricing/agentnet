@@ -34,7 +34,7 @@ async function emit(hooks, event, data) {
  * @param {Array} tools - Tool definitions
  * @param {Array} handoffs - Handoff definitions
  */
-export function makeToolsAndHandoffsMap(toolsAndHandoffsMap, tools, handoffs) {
+export function makeToolsAndHandoffsMap(llmType, toolsAndHandoffsMap, tools, handoffs) {
 	if (!tools) {
 		return;
 	}
@@ -71,6 +71,11 @@ export function makeToolsAndHandoffsMap(toolsAndHandoffsMap, tools, handoffs) {
 					logger.warn('Skipping invalid handoff definition', { handoff });
 					continue;
 				}
+
+                // TODO: Remove this once we have a better way to handle handoffs
+                if (llmType === 'openai') {
+                    handoff.schema.type = 'function'
+                }
 				
 				// Add handoff schema to tools list
 				toolsAndHandoffsMap.tools.push(handoff.schema);

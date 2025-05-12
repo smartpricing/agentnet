@@ -13,7 +13,7 @@ export const LogLevel = {
  * Default logger configuration
  */
 const DEFAULT_CONFIG = {
-  level: LogLevel.INFO,
+  level: process.env.AGENTNET_LOG_LEVEL || LogLevel.INFO,
   enableTimestamps: true,
   enableColors: true,
   redactSensitiveData: true,

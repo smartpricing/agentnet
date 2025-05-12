@@ -5,18 +5,10 @@ import { ConfigurationError } from '../errors/index.js';
  * Map of API versions with their compatibility information
  */
 export const API_VERSIONS = {
-    // Smartagent API versions
-    'smartagent.io/v1alpha1': {
+    'agentnet/v1alpha1': {
         isSupported: true,
-        isStable: false,
-        minEngineVersion: '0.5.0',
-        features: ['basic', 'discovery', 'handoffs']
-    },
-    // Agentnet API versions
-    'agentnet.io/v1alpha1': {
-        isSupported: true,
-        isStable: false,
-        minEngineVersion: '0.8.0',
+        isStable: true,
+        minEngineVersion: '0.0.4',
         features: ['basic', 'discovery', 'handoffs', 'advanced-routing']
     }
 };
@@ -24,19 +16,19 @@ export const API_VERSIONS = {
 /**
  * Default API version to use when none is specified
  */
-export const DEFAULT_API_VERSION = 'smartagent.io/v1alpha1';
+export const DEFAULT_API_VERSION = 'agentnet/v1alpha1';
 
 /**
  * Latest stable API version
  */
-export const LATEST_STABLE_VERSION = 'agentnet.io/v1alpha1';
+export const LATEST_STABLE_VERSION = 'agentnet/v1alpha1';
 
 /**
  * Version upgrade paths map
  * Defines valid upgrade paths between versions
  */
 export const VERSION_UPGRADE_PATHS = {
-    'smartagent.io/v1alpha1': ['agentnet.io/v1alpha1']
+    'agentnet/v1alpha1': ['agentnet/v1alpha1']
 };
 
 /**
@@ -154,18 +146,18 @@ export function getUpgradeOptions(fromVersion) {
  */
 const VERSION_MIGRATIONS = {
     // Migration from smartagent.io/v1alpha1 to agentnet.io/v1alpha1
-    'smartagent.io/v1alpha1->agentnet.io/v1alpha1': (definition) => {
+        'smartagent.io/v1alpha1->agentnet.io/v1alpha1': (definition) => {
         // Deep clone the definition to avoid modifying the original
         const newDef = JSON.parse(JSON.stringify(definition));
         
         // Update the apiVersion
-        newDef.apiVersion = 'agentnet.io/v1alpha1';
+        newDef.apiVersion = 'agentnet/v1alpha1';
         
         // Handle specific field migrations
         // Example: rename or restructure fields as needed
         
         // Log the migration
-        logger.info(`Migrated agent definition from smartagent.io/v1alpha1 to agentnet.io/v1alpha1`, { 
+        logger.info(`Migrated agent definition from smartagent.io/v1alpha1 to agentnet/v1alpha1`, { 
             agentName: newDef.metadata?.name 
         });
         

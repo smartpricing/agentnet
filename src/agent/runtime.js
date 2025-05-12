@@ -45,6 +45,7 @@ export async function AgentRuntime(agentConfig) {
         try {
             // Update tools and handoffs map with discovered agents
             makeToolsAndHandoffsMap(
+                llmApi.type,
                 toolsAndHandoffsMap, 
                 Object.values(tools), 
                 [handoffs, Object.values(discoveredAgents)]

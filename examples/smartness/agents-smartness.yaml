@@ -1,42 +1,37 @@
 ---
-apiVersion: smartagent.io/v1alpha1
+apiVersion: agentnet/v1alpha1
 kind: AgentDefinition
 metadata:
   name: entrypoint
-  namespace: smartchat
+  namespace: smartexample
 spec:
   io:
     - type: NatsIO
       bindings:
-        discoveryTopic: smartness.discovery
+        discoveryTopic: smartexample.discovery
         acceptedNetworks: 
-          - "smartchat.*"
+          - "smartexample.*"
   store:
-    type: Memory
+    type: Postgres
   llm:
-    provider: Gemini
-    model: gemini-2.0-flash
-    systemInstruction: |
+    provider: GPT
+    model: gpt-4.1-2025-04-14
+    instructions: |
       You are a highly advanced triage agent. 
       Prioritize clarity and helpfulness.
       Use tools effectively to gather information.
-    config:
-      temperature: 0.5
-      toolConfig:
-        functionCallingConfig:
-          mode: 'auto'
       
 ---
-apiVersion: smartagent.io/v1alpha1
+apiVersion: agentnet/v1alpha1
 kind: AgentDefinition
 metadata:
   name: accomodation
-  namespace: smartchat
+  namespace: smartexample
 spec:
   io:
     - type: NatsIO
       bindings:
-        discoveryTopic: smartness.discovery
+        discoveryTopic: smartexample.discovery
   store:
     type: Postgres
 
@@ -96,16 +91,16 @@ spec:
           - question             
 
 ---
-apiVersion: smartagent.io/v1alpha1
+apiVersion: agentnet/v1alpha1
 kind: AgentDefinition
 metadata:
   name: review
-  namespace: smartchat
+  namespace: smartexample
 spec:
   io:
     - type: NatsIO
       bindings:
-        discoveryTopic: smartness.discovery
+        discoveryTopic: smartexample.discovery
   store:
     type: Postgres
 
@@ -147,16 +142,16 @@ spec:
           - hotelName          
 
 ---
-apiVersion: smartagent.io/v1alpha1
+apiVersion: agentnet/v1alpha1
 kind: AgentDefinition
 metadata:
   name: booking
-  namespace: smartchat
+  namespace: smartexample
 spec:
   io:
     - type: NatsIO
       bindings:
-        discoveryTopic: smartness.discovery
+        discoveryTopic: smartexample.discovery
   store:
     type: Postgres
 
@@ -217,16 +212,16 @@ spec:
           - roomName                    
 
 ---
-apiVersion: smartagent.io/v1alpha1
+apiVersion: agentnet/v1alpha1
 kind: AgentDefinition
 metadata:
   name: pricing
-  namespace: smartchat
+  namespace: smartexample
 spec:
   io:
     - type: NatsIO
       bindings:
-        discoveryTopic: smartness.discovery
+        discoveryTopic: smartexample.discovery
   store:
     type: Postgres
 

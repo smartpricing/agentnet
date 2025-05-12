@@ -50,14 +50,14 @@ class OpenAILLM extends BaseLLM {
 			conversationLength: conversation.length,
 			toolsCount: toolsAndHandoffsMap.tools.length
 		});
-		
+		//console.log(JSON.stringify(input, null, 2))
 		try {
 			const response = await client.responses.create(input);
 			logger.debug('OpenAI response received');
 			return response;
 		} catch (error) {
 			logger.error('OpenAI API error', { 
-				error,
+				error: error.message,
 				modelName: input.model
 			});
 			
