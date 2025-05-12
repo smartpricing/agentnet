@@ -1,7 +1,7 @@
 import { build, makeToolsAndHandoffsMap } from "./executor.js"
-import { NatsIOAgentRuntime } from "./runtimes/nats.js"
 import { logger } from "../utils/logger.js"
 import { Response, SessionStore } from "../index.js"
+import { createAgentRuntime } from "../transport/index.js"
 
 export async function AgentRuntime(agentConfig) {
     const {
@@ -19,11 +19,14 @@ export async function AgentRuntime(agentConfig) {
     } = agentConfig
     
     // Initialize IO runtime
-    const natsInterfaces = ioInterfaces.filter(x => x.type === 'NatsIO')
-    const { handleTask, discoveredAgents } = await NatsIOAgentRuntime(
+    const transportType = ioInterfaces.length > 0 ? ioInterfaces[0].type.replace('IO', '').toLowerCase() : 'nats';
+    logger.info(`Creating agent runtime with transport type: ${transportType}`);
+    
+    const { handleTask, discoveredAgents } = await createAgentRuntime(
+        transportType,
         namespace,
         agentName, 
-        natsInterfaces, 
+        ioInterfaces, 
         discoverySchemas
     )
     
