@@ -245,7 +245,7 @@ export class NatsTransport extends Transport {
                             if (discoveryMessage.agentName !== agentName && !discoveredAgents[agentKey]) {
                                 logger.info(`${agentName} discovered agent capability: ${discoveryMessage.agentName} with capability ${schema.name}`);
                                 
-                                const handoffFunction = async (conversation, state, input) => {
+                                const handoffFunction = async (state, input) => {
                                     try {
                                         // Use withTimeout to ensure handoffs don't hang
                                         return await withTimeout(

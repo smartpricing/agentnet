@@ -90,7 +90,7 @@ class OpenAILLM extends BaseLLM {
 				callId: toolCall.call_id
 			});
 			
-			const result = await super.executeToolCall(toolCall, name, args, state, conversation, toolsAndHandoffsMap);
+			const result = await super.executeToolCall(toolCall, name, args, state, toolsAndHandoffsMap);
 			conversation.push(toolCall);
 			
 			const resultString = typeof result === 'string' ? result : JSON.stringify(result);
@@ -129,7 +129,6 @@ class OpenAILLM extends BaseLLM {
 	async onResponse(state, conversation, toolsAndHandoffsMap, response) {
 		if (response.output_text !== undefined && response.output_text.length > 0) {
 			logger.debug('OpenAI response contains text, returning directly');
-			conversation.push({ role: 'model', parts: [{ text: response.output_text }] });
 			return response.output_text;
 		}
 

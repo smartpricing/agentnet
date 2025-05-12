@@ -82,12 +82,12 @@ export class BaseLLM {
    * @param {Object} toolsAndHandoffsMap - Map of available tools
    * @returns {Promise<any>} Result of the tool execution
    */
-  async executeToolCall(toolCall, name, args, state, conversation, toolsAndHandoffsMap) {
+  async executeToolCall(toolCall, name, args, state, toolsAndHandoffsMap) {
     logger.debug(`Executing tool from ${this.type}`, { 
       toolName: name,
       argsPreview: JSON.stringify(args).substring(0, 100)
     });
-    
+
     try {
       if (!toolsAndHandoffsMap[name] || !toolsAndHandoffsMap[name].function) {
         throw new Error(`Tool "${name}" not found or has no function implementation`);
@@ -95,7 +95,7 @@ export class BaseLLM {
 
       let result = null;
       if (toolsAndHandoffsMap[name].type === 'handoff') {
-        result = await toolsAndHandoffsMap[name].function(conversation, state, args);
+        result = await toolsAndHandoffsMap[name].function(state, args);
         // Process handoff results if needed
         this.processHandoffResult(result, state);
       } else {
@@ -106,7 +106,7 @@ export class BaseLLM {
       return result;
       
     } catch (error) {
-      logger.error(`Error executing tool "${name}"`, { error });
+      logger.error(`Error executing tool "${name}"`, error.message);
       throw error;
     }
   }

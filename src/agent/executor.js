@@ -300,12 +300,6 @@ export async function build(
 					error: error
 				});
 				
-				// Add error message to conversation
-				contents.push({
-					role: 'system',
-					content: `Error: ${error.message}`
-				});
-				
 				// If we haven't hit max runs, try again
 				if (run < maxRuns - 1) {
 					logger.info(`Continuing after error in agent ${agentName}`);

@@ -94,7 +94,7 @@ class GeminiLLM extends BaseLLM {
     const name = toolCall.name;
     
     try {
-      const result = await super.executeToolCall(toolCall, name, args, state, conversation, toolsAndHandoffsMap);
+      const result = await super.executeToolCall(toolCall, name, args, state, toolsAndHandoffsMap);
       
       // Add function call and response to conversation in Gemini-specific format
       const function_response_part = {
@@ -129,7 +129,6 @@ class GeminiLLM extends BaseLLM {
     // Handle simple text response
     if (response.text !== undefined) {
       logger.debug('Gemini response contains text, returning directly');
-      conversation.push({ role: 'model', parts: [{ text: response.text }] });
       return response.text;
     }
     

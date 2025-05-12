@@ -67,7 +67,7 @@ console.log("=======\n", res.getSession())
 const message2 = new Message({
     content: "Quanto costa la camera doppia del Flora per il 10-05-2025 per due persone? Prenotala se costa meno di 100€ la camera double con vista mare per il 10-05-2025 al hotel Flora",
     session: {
-        id: "67a71e42-a7d8-1db2-ad17-64e1c8546b21"
+        id: "67a71e42-a7d8-1db2-ad17-64e1c8546b20"
     }
 })
 const res2 = await agentClient.queryIo(io, 'entrypoint', message2)
