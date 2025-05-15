@@ -25,7 +25,7 @@ export function session (id) {
 			conversation = conversation.slice(-elementsToKeep)
 			let additionalElementsToRemove = 0
 			for (const chatIndex in conversation) {
-				if (conversation[chatIndex].role !== 'user' || conversation[chatIndex].role == undefined) {
+				if (conversation[chatIndex].role !== 'user' || conversation[chatIndex].role == undefined || (conversation[chatIndex].role === 'user' && conversation[chatIndex]?.parts?.[0]?.functionResponse != null)) {
 					additionalElementsToRemove += 1
 				} else {
 					break
