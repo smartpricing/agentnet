@@ -191,12 +191,10 @@ export function memoryStore () {
 		connect: async function () {},
 		disconnect: async function () {},
 		set: async function (key, value) {
-			console.log('Setting state', key, value)
 			state[key] = value
 			return state[key]
 		},
 		get: async function (key) {
-			console.log('Getting state', key)
 			return state[key] || null
 		}	
 	}

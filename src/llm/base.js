@@ -83,7 +83,7 @@ export class BaseLLM {
    * @returns {Promise<any>} Result of the tool execution
    */
   async executeToolCall(toolCall, name, args, state, toolsAndHandoffsMap) {
-    logger.debug(`Executing tool from ${this.type}`, { 
+    logger.info(`Executing tool from ${this.type}`, { 
       toolName: name,
       argsPreview: JSON.stringify(args).substring(0, 100)
     });
