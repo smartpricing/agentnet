@@ -14,7 +14,7 @@ import {
 
 // Constants
 const HEARTBEAT_INTERVAL = 1000;
-const TIMEOUT_TASK_REQUEST = 60000;
+const TIMEOUT_TASK_REQUEST = 120000;
 
 /**
  * NATS implementation of the Transport interface

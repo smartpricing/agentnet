@@ -7,8 +7,8 @@ import {
 	withRetry 
 } from '../errors/index.js';
 
-const DEFAULT_TOOL_TIMEOUT = 30000; // 30 seconds
-const DEFAULT_LLM_TIMEOUT = 60000;  // 60 seconds
+const DEFAULT_TOOL_TIMEOUT = 120000;
+const DEFAULT_LLM_TIMEOUT = 120000;
 
 /**
  * Emits an event to the hooks system if hooks are available
