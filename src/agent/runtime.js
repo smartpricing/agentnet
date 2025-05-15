@@ -67,7 +67,8 @@ export async function AgentRuntime(agentConfig) {
             const content = message.getContent()
             const session = message.getSession()
             const sessionId = message.getSessionId()
-            const storeStateSessionId = agentName + "." + sessionId
+            const storeStateSessionId = namespace + "." + agentName + "." + sessionId
+            console.log("---->", storeStateSessionId)
 
             // Load and merge session state and session data
             let storeState = {

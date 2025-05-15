@@ -1,5 +1,5 @@
 ---
-apiVersion: smartagent.io/v1alpha1
+apiVersion: agentnet/v1alpha1
 kind: AgentDefinition
 metadata:
   name: plannerAgent
@@ -168,7 +168,7 @@ spec:
           - request
 
 ---
-apiVersion: smartagent.io/v1alpha1
+apiVersion: agentnet/v1alpha1
 kind: AgentDefinition
 metadata:
   name: eventFinderAgent

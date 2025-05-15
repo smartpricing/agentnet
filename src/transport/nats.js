@@ -256,25 +256,24 @@ export class NatsTransport extends Transport {
                                                         content: input
                                                     });
                                                     const req = await this.request(
-                                                        discoveryMessage.agentName, 
+                                                        network, 
                                                         message.serialize(), 
                                                         { timeout: TIMEOUT_TASK_REQUEST }
                                                     );
                                                     return req.string();
                                                 } catch (error) {
                                                     throw new HandoffError(
-                                                        `Handoff to agent ${discoveryMessage.agentName} failed: ${error.message}`,
-                                                        agentName,
-                                                        discoveryMessage.agentName,
+                                                        `Handoff to agent ${network} failed: ${error.message}`,
+                                                        network,
                                                         { schemaName: schema.name }
                                                     );
                                                 }
                                             },
                                             TIMEOUT_TASK_REQUEST,
-                                            `handoff to ${discoveryMessage.agentName}`
+                                            `handoff to ${network}`
                                         );
                                     } catch (error) {
-                                        logger.error(`Handoff error to ${discoveryMessage.agentName}`, {
+                                        logger.error(`Handoff error to ${network}`, {
                                             error,
                                             schema: schema.name
                                         });
@@ -319,17 +318,18 @@ export class NatsTransport extends Transport {
      * @param {Function} processingFunction - The function to process requests
      * @returns {Promise<void>}
      */
-    async setupTaskHandler(agentName, processingFunction) {
+    async setupTaskHandler(namespace, agentName, processingFunction) {
         let taskSub;
         
         try {
-            taskSub = await this.subscribe(agentName, { queue: agentName });
+            const topic = `${namespace}.${agentName}`;
+            taskSub = await this.subscribe(topic, { queue: topic });
             logger.info(`Agent ${agentName} subscribed for task handling`);
         } catch (error) {
             throw new TransportError(
                 `Failed to subscribe for task handling: ${error.message}`,
                 this.transportType,
-                { agentName }
+                { agentName, topic }
             );
         }
         
@@ -395,7 +395,7 @@ export class NatsTransport extends Transport {
             if (this.connected) {
                 logger.info('Attempting to resubscribe for task handling');
                 try {
-                    await this.setupTaskHandler(agentName, processingFunction);
+                    await this.setupTaskHandler(namespace, agentName, processingFunction);
                 } catch (resubError) {
                     logger.error('Failed to resubscribe for task handling', { error: resubError });
                     throw new TransportError(
@@ -450,7 +450,7 @@ export class NatsTransport extends Transport {
                 if (typeof fn !== 'function') {
                     throw new Error('Task handler must be a function');
                 }
-                await this.setupTaskHandler(agentName, fn);
+                await this.setupTaskHandler(namespace, agentName, fn);
             };
 
             return { handleTask, discoveredAgents };

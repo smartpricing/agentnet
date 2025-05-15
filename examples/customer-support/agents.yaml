@@ -1,5 +1,5 @@
 ---
-apiVersion: smartagent.io/v1alpha1
+apiVersion: agentnet/v1alpha1
 kind: AgentDefinition
 metadata:
   name: triageAgent
@@ -67,7 +67,7 @@ spec:
           - queryId
 
 ---
-apiVersion: smartagent.io/v1alpha1
+apiVersion: agentnet/v1alpha1
 kind: AgentDefinition
 metadata:
   name: productAgent
@@ -141,7 +141,7 @@ spec:
           - question
 
 ---
-apiVersion: smartagent.io/v1alpha1
+apiVersion: agentnet/v1alpha1
 kind: AgentDefinition
 metadata:
   name: technicalAgent
@@ -221,7 +221,7 @@ spec:
           - issue
 
 ---
-apiVersion: smartagent.io/v1alpha1
+apiVersion: agentnet/v1alpha1
 kind: AgentDefinition
 metadata:
   name: billingAgent
@@ -300,7 +300,7 @@ spec:
           - question
 
 ---
-apiVersion: smartagent.io/v1alpha1
+apiVersion: agentnet/v1alpha1
 kind: AgentDefinition
 metadata:
   name: escalationAgent
@@ -380,7 +380,7 @@ spec:
           - complexIssue
 
 ---
-apiVersion: smartagent.io/v1alpha1
+apiVersion: agentnet/v1alpha1
 kind: AgentDefinition
 metadata:
   name: followupAgent

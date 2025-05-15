@@ -179,25 +179,6 @@ When creating agent definitions, you should specify which API version you're tar
 
 If you don't specify an `apiVersion`, Agentnet will default to `agentnet/v1alpha1` but will log a warning.
 
-#### Version Migration Tool
-
-Agentnet includes a command-line tool to help migrate your agent definitions to newer API versions:
-
-```bash
-# Migrate a YAML file to the latest version
-node src/tools/migrate-version.js ./agents.yaml
-
-# Specify a target version
-node src/tools/migrate-version.js ./agents.yaml --version agentnet.io/v1alpha1
-
-# Write to a specific output file
-node src/tools/migrate-version.js ./agents.yaml --output ./agents-new.yaml
-
-# Just check if migration is needed without modifying
-node src/tools/migrate-version.js ./agents.yaml --check
-```
-
-This tool helps you keep your agent definitions up-to-date with the latest features while maintaining compatibility with the Agentnet platform.
 
 ### Dynamic Implementation (JavaScript)
 
@@ -286,7 +267,7 @@ const message = new Message({
 
 // Query the agent using the client
 console.log("Sending query to the entrypoint agent...");
-const response = await client.queryIo(natsIO, 'entrypointAgent', message);
+const response = await client.queryIo(natsIO, 'smartchat.entrypointAgent', message); // {namespace}.{name}
 
 // Process the response
 console.log("Agent Response:", response.getContent());

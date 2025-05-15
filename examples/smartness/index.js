@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 import { AgentLoaderFile, AgentClient, NatsIO, Bindings, Message, PostgresStore, RedisStore, MemoryStore } from "../../src/index.js"
 
 // NatsIO instance
@@ -53,23 +54,24 @@ await agentPricing.compile()
 await new Promise(resolve => setTimeout(resolve, 2000))
 
 // Agent client
+const sessionId = 'f3f4dfe9-3ca2-4e10-956f-e8d19ece5592' //uuidv4()
 const agentClient = AgentClient()   
 const message = new Message({
     content: "What rooms do you have from 2025-05-25 to 2025-05-30 for 3 guests For the hotel Flora? Give me the review of the hotel Flora",
     session: {
-        id: "67a71e42-a7d8-1db2-ad17-64e1c8546b20"
+        id: sessionId
     }
 })
-const res = await agentClient.queryIo(io, 'entrypoint', message)
+const res = await agentClient.queryIo(io, 'smartexample.entrypoint', message)
 console.log("=======\n", res.getContent())
 console.log("=======\n", res.getSession())
 
 const message2 = new Message({
     content: "Quanto costa la camera doppia del Flora per il 10-05-2025 per due persone? Prenotala se costa meno di 100€ la camera double con vista mare per il 10-05-2025 al hotel Flora",
     session: {
-        id: "67a71e42-a7d8-1db2-ad17-64e1c8546b20"
+        id: sessionId
     }
 })
-const res2 = await agentClient.queryIo(io, 'entrypoint', message2)
+const res2 = await agentClient.queryIo(io, 'smartexample.entrypoint', message2)
 console.log("=======\n", res2.getContent())
 console.log("=======\n", res2.getSession())
