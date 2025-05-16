@@ -13,8 +13,8 @@ import {
 } from '../errors/index.js';
 
 // Constants
-const HEARTBEAT_INTERVAL = 1000;
-const TIMEOUT_TASK_REQUEST = 120000;
+const HEARTBEAT_INTERVAL = process.env.AGENTNET_NATS_HEARTBEAT_INTERVAL || 1000;
+const TIMEOUT_TASK_REQUEST = process.env.AGENTNET_NATS_TIMEOUT_TASK_REQUEST || 120000;
 
 /**
  * NATS implementation of the Transport interface

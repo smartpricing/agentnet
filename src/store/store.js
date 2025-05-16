@@ -1,14 +1,15 @@
 import { v4 as uuid } from 'uuid'
 import { createClient } from 'redis'
 import pgp from 'pg-promise'
+import { Conversation } from '../utils/conversation.js'
 
 export function session (id) {
 	let state = {}
-	let conversation = []
+	let conversationManager = new Conversation()
 
 	return {
 		query: async function (agentInstance, input) {
-			return await agentInstance.query(state, conversation, input)
+			return await agentInstance.query(state, conversationManager.getRawConversation(), input)
 		},
 		setState: function (_state) {
 			state = _state
@@ -22,33 +23,39 @@ export function session (id) {
 			return state
 		},
 		trimConversation: function (elementsToKeep) {
-			conversation = conversation.slice(-elementsToKeep)
-			let additionalElementsToRemove = 0
-			for (const chatIndex in conversation) {
-				if (conversation[chatIndex].role !== 'user' || conversation[chatIndex].role == undefined || (conversation[chatIndex].role === 'user' && conversation[chatIndex]?.parts?.[0]?.functionResponse != null)) {
-					additionalElementsToRemove += 1
-				} else {
-					break
-				}
-			}
-			if (additionalElementsToRemove > 0) {
-				conversation = conversation.slice(additionalElementsToRemove)
-			}
+			conversationManager.trim(elementsToKeep)
 		},
 		setConversation: function (_conversation) {
-			conversation = _conversation
+			// Support both array and Conversation objects
+			if (_conversation instanceof Conversation) {
+				conversationManager = _conversation;
+			} else if (Array.isArray(_conversation)) {
+				conversationManager.importFromArray(_conversation);
+			}
 		},	
 		getConversation: function () {
-			return conversation
+			// Return raw conversation for backward compatibility
+			return conversationManager.getRawConversation()
+		},
+		getConversationManager: function() {
+			return conversationManager
 		},
 		load: async function (stateStore) {
 			const _state = await stateStore.get(id)
 			if (_state !== null) {
 				const parsedState = JSON.parse(_state)
-				conversation = parsedState.conversation || []
+				
+				// Handle both old-style conversation array and new-style serialized Conversation
+				if (parsedState.conversationData) {
+					conversationManager.deserialize(parsedState.conversationData)
+				} else if (Array.isArray(parsedState.conversation)) {
+					conversationManager.importFromArray(parsedState.conversation)
+				}
+				
 				state = parsedState.state || {}
 				return {
-					conversation: conversation,
+					// Return raw conversation for backward compatibility
+					conversation: conversationManager.getRawConversation(),
 					state: state
 				}
 			}
@@ -59,8 +66,11 @@ export function session (id) {
 		},
 		dump: async function (stateStore) {
 			return await stateStore.set(id, JSON.stringify({
-				conversation: conversation,
-				state: state				
+				// Keep conversation array for backward compatibility
+				conversation: conversationManager.getRawConversation(),
+				// Add serialized conversation data with metadata
+				conversationData: conversationManager.serialize(),
+				state: state
 			}))
 		},		
 	}

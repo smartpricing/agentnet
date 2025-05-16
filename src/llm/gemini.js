@@ -2,6 +2,7 @@ import { GoogleGenAI } from '@google/genai'
 import { logger } from '../utils/logger.js'
 import { LLMError } from '../errors/index.js'
 import { BaseLLM } from './base.js'
+import { Conversation } from '../utils/conversation.js'
 
 /**
  * Gemini LLM implementation
@@ -41,7 +42,13 @@ class GeminiLLM extends BaseLLM {
    */
   async callModel(llmClientConfig, context) {
     const { client, toolsAndHandoffsMap, conversation } = context;
-    const input = { ...llmClientConfig, contents: conversation };
+    
+    // Get raw conversation if it's a Conversation object
+    const conversationArray = conversation instanceof Conversation
+      ? conversation.getRawConversation()
+      : conversation;
+      
+    const input = { ...llmClientConfig, contents: conversationArray };
 
     // Configure tools if provided
     if (input.config !== undefined && input.tools !== undefined) {
@@ -53,7 +60,7 @@ class GeminiLLM extends BaseLLM {
 
     logger.debug('Calling Gemini model', { 
       model: input.model,
-      conversationLength: conversation.length,
+      conversationLength: conversationArray.length,
       toolsCount: toolsAndHandoffsMap.tools.length
     });
     
@@ -86,7 +93,7 @@ class GeminiLLM extends BaseLLM {
    * Handle a specific tool call from Gemini response
    * @param {Object} toolCall - The tool call to process
    * @param {Object} state - Current application state
-   * @param {Array} conversation - The conversation history
+   * @param {Array|Conversation} conversation - The conversation history
    * @param {Object} toolsAndHandoffsMap - Map of available tools
    */
   async handleToolCall(toolCall, state, conversation, toolsAndHandoffsMap) {
@@ -102,8 +109,16 @@ class GeminiLLM extends BaseLLM {
         response: typeof result === 'string' ? { answer: result } : result
       };
       
-      conversation.push({ role: 'model', parts: [{ functionCall: toolCall }] });
-      conversation.push({ role: 'user', parts: [{ functionResponse: function_response_part }] });
+      const functionCallMessage = { role: 'model', parts: [{ functionCall: toolCall }] };
+      const functionResponseMessage = { role: 'user', parts: [{ functionResponse: function_response_part }] };
+      
+      if (conversation instanceof Conversation) {
+        conversation.addFunctionCall(functionCallMessage);
+        conversation.addFunctionResult(functionResponseMessage);
+      } else {
+        conversation.push(functionCallMessage);
+        conversation.push(functionResponseMessage);
+      }
       
     } catch (error) {
       // Return error as function response in Gemini-specific format
@@ -112,15 +127,23 @@ class GeminiLLM extends BaseLLM {
         response: { error: error.message }
       };
       
-      conversation.push({ role: 'model', parts: [{ functionCall: toolCall }] });
-      conversation.push({ role: 'user', parts: [{ functionResponse: errorResponse }] });
+      const functionCallMessage = { role: 'model', parts: [{ functionCall: toolCall }] };
+      const functionResponseMessage = { role: 'user', parts: [{ functionResponse: errorResponse }] };
+      
+      if (conversation instanceof Conversation) {
+        conversation.addFunctionCall(functionCallMessage);
+        conversation.addFunctionResult(functionResponseMessage);
+      } else {
+        conversation.push(functionCallMessage);
+        conversation.push(functionResponseMessage);
+      }
     }
   }
 
   /**
    * Processes the model response, handling text responses and function calls
    * @param {Object} state - Current application state
-   * @param {Array} conversation - The conversation history
+   * @param {Array|Conversation} conversation - The conversation history
    * @param {Object} toolsAndHandoffsMap - Map of available tools
    * @param {Object} response - The model response to process
    * @returns {Promise<string|null>} Text response or null if processing tool calls
@@ -129,6 +152,15 @@ class GeminiLLM extends BaseLLM {
     // Handle simple text response
     if (response.text !== undefined) {
       logger.debug('Gemini response contains text, returning directly');
+      
+      if (conversation instanceof Conversation) {
+        const modelResponse = {
+          role: 'model',
+          parts: [{ text: response.text }]
+        };
+        conversation.addModelResponse(modelResponse);
+      }
+      
       return response.text;
     }
     
@@ -149,17 +181,23 @@ class GeminiLLM extends BaseLLM {
 
   /**
    * Adds a user prompt to the conversation
-   * @param {Array} conversation - The conversation history
+   * @param {Array|Conversation} conversation - The conversation history
    * @param {string} formattedPrompt - The formatted user prompt
    * @returns {Promise<void>}
    */
   async prompt(conversation, formattedPrompt) {
     await super.prompt(conversation, formattedPrompt);
     
-    conversation.push({
+    const userMessage = {
       role: 'user',
       parts: [{ text: formattedPrompt }]
-    });
+    };
+    
+    if (conversation instanceof Conversation) {
+      conversation.addUserMessage(userMessage);
+    } else {
+      conversation.push(userMessage);
+    }
   }
 }
 

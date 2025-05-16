@@ -1,5 +1,6 @@
 import { logger } from '../utils/logger.js'
 import { LLMError } from '../errors/index.js'
+import { Conversation } from '../utils/conversation.js'
 
 /**
  * Base class for LLM implementations
@@ -47,7 +48,7 @@ export class BaseLLM {
 
   /**
    * Add a user prompt to the conversation
-   * @param {Array} conversation - The conversation history
+   * @param {Array|Conversation} conversation - The conversation history
    * @param {string} formattedPrompt - The formatted user prompt
    * @returns {Promise<void>}
    */
@@ -56,6 +57,16 @@ export class BaseLLM {
       promptPreview: formattedPrompt.substring(0, 100)
     });
     
+    // Handle both raw array and Conversation object
+    if (conversation instanceof Conversation) {
+      // Subclasses should override this to add their specific format
+      // But we'll add a generic format by default
+      conversation.addUserMessage({
+        role: 'user',
+        content: formattedPrompt
+      });
+    }
+    // For array, we rely on subclass implementations
     // Subclasses must implement appropriate conversation format
   }
 
@@ -83,10 +94,7 @@ export class BaseLLM {
    * @returns {Promise<any>} Result of the tool execution
    */
   async executeToolCall(toolCall, name, args, state, toolsAndHandoffsMap) {
-    logger.info(`Executing tool from ${this.type}`, { 
-      toolName: name,
-      argsPreview: JSON.stringify(args).substring(0, 100)
-    });
+    logger.info(`Executing tool from ${this.type} - Tool: ${name} - Args: ${JSON.stringify(args).substring(0, 100)}`);
 
     try {
       if (!toolsAndHandoffsMap[name] || !toolsAndHandoffsMap[name].function) {
@@ -104,7 +112,6 @@ export class BaseLLM {
       
       logger.debug('Tool execution successful', { toolName: name });
       return result;
-      
     } catch (error) {
       logger.error(`Error executing tool "${name}"`, error.message);
       throw error;

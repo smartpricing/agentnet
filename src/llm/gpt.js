@@ -2,6 +2,7 @@ import OpenAI from 'openai'
 import { logger } from '../utils/logger.js'
 import { LLMError } from '../errors/index.js'
 import { BaseLLM } from './base.js'
+import { Conversation } from '../utils/conversation.js'
 
 /**
  * OpenAI LLM implementation
@@ -43,11 +44,15 @@ class OpenAILLM extends BaseLLM {
 		const { client, toolsAndHandoffsMap, conversation } = context;
 		const input = { ...llmClientConfig };
 		input.tools = toolsAndHandoffsMap.tools;
-		input.input = conversation;
+		
+		// Get raw conversation if it's a Conversation object
+		input.input = conversation instanceof Conversation
+			? conversation.getRawConversation()
+			: conversation;
 		
 		logger.debug('Calling OpenAI model', { 
 			model: input.model,
-			conversationLength: conversation.length,
+			conversationLength: input.input.length,
 			toolsCount: toolsAndHandoffsMap.tools.length
 		});
 		//console.log(JSON.stringify(input, null, 2))
@@ -76,7 +81,7 @@ class OpenAILLM extends BaseLLM {
 	 * Handle a specific tool call from OpenAI response
 	 * @param {Object} toolCall - The tool call to process
 	 * @param {Object} state - Current application state
-	 * @param {Array} conversation - The conversation history
+	 * @param {Array|Conversation} conversation - The conversation history
 	 * @param {Object} toolsAndHandoffsMap - Map of available tools
 	 */
 	async handleToolCall(toolCall, state, conversation, toolsAndHandoffsMap) {
@@ -91,7 +96,13 @@ class OpenAILLM extends BaseLLM {
 			});
 			
 			const result = await super.executeToolCall(toolCall, name, args, state, toolsAndHandoffsMap);
-			conversation.push(toolCall);
+			
+			// Add function call to conversation
+			if (conversation instanceof Conversation) {
+				conversation.addFunctionCall(toolCall);
+			} else {
+				conversation.push(toolCall);
+			}
 			
 			const resultString = typeof result === 'string' ? result : JSON.stringify(result);
 			
@@ -100,28 +111,47 @@ class OpenAILLM extends BaseLLM {
 				resultPreview: resultString.substring(0, 100)
 			});
 			
-			conversation.push({        
+			const functionOutput = {        
 				type: "function_call_output",
 				call_id: toolCall.call_id,
 				output: resultString
-			});
+			};
+			
+			// Add function result to conversation
+			if (conversation instanceof Conversation) {
+				conversation.addFunctionResult(functionOutput);
+			} else {
+				conversation.push(functionOutput);
+			}
 		} catch (error) {
 			logger.error(`Error executing tool "${toolCall.name}"`, { error });
 			
 			// Add error as function output
-			conversation.push(toolCall);
-			conversation.push({
-				type: "function_call_output",
-				call_id: toolCall.call_id,
-				output: JSON.stringify({ error: error.message })
-			});
+			if (conversation instanceof Conversation) {
+				conversation.addFunctionCall(toolCall);
+				
+				const errorOutput = {
+					type: "function_call_output",
+					call_id: toolCall.call_id,
+					output: JSON.stringify({ error: error.message })
+				};
+				
+				conversation.addFunctionResult(errorOutput);
+			} else {
+				conversation.push(toolCall);
+				conversation.push({
+					type: "function_call_output",
+					call_id: toolCall.call_id,
+					output: JSON.stringify({ error: error.message })
+				});
+			}
 		}
 	}
 
 	/**
 	 * Processes the model response, handling text responses and function calls
 	 * @param {Object} state - Current application state
-	 * @param {Array} conversation - The conversation history
+	 * @param {Array|Conversation} conversation - The conversation history
 	 * @param {Object} toolsAndHandoffsMap - Map of available tools
 	 * @param {Object} response - The model response to process
 	 * @returns {Promise<string|null>} Text response or null if processing tool calls
@@ -129,6 +159,15 @@ class OpenAILLM extends BaseLLM {
 	async onResponse(state, conversation, toolsAndHandoffsMap, response) {
 		if (response.output_text !== undefined && response.output_text.length > 0) {
 			logger.debug('OpenAI response contains text, returning directly');
+			
+			// Add model response to conversation if using Conversation object
+			if (conversation instanceof Conversation) {
+				conversation.addModelResponse({
+					role: 'assistant',
+					content: response.output_text
+				});
+			}
+			
 			return response.output_text;
 		}
 
@@ -142,7 +181,11 @@ class OpenAILLM extends BaseLLM {
 		
 		// Add reasoning to conversation
 		for (const res of reasoning) {
-			conversation.push(res);
+			if (conversation instanceof Conversation) {
+				conversation.addModelResponse(res);
+			} else {
+				conversation.push(res);
+			}
 		}
 
 		// Process all tool calls sequentially
@@ -155,17 +198,23 @@ class OpenAILLM extends BaseLLM {
 
 	/**
 	 * Adds a user prompt to the conversation
-	 * @param {Array} conversation - The conversation history
+	 * @param {Array|Conversation} conversation - The conversation history
 	 * @param {string} formattedPrompt - The formatted user prompt
 	 * @returns {Promise<void>}
 	 */
 	async prompt(conversation, formattedPrompt) {
 		await super.prompt(conversation, formattedPrompt);
 		
-		conversation.push({
+		const userMessage = {
 			role: 'user',
 			content: formattedPrompt
-		});
+		};
+		
+		if (conversation instanceof Conversation) {
+			conversation.addUserMessage(userMessage);
+		} else {
+			conversation.push(userMessage);
+		}
 	}
 }
 

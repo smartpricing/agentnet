@@ -62,7 +62,7 @@ const message = new Message({
         id: sessionId
     }
 })
-const res = await agentClient.queryIo(io, 'smartexample.entrypoint', message)
+const res = await agentClient.queryIo(io, 'smartexample', 'entrypoint', message)
 console.log("=======\n", res.getContent())
 console.log("=======\n", res.getSession())
 
@@ -72,6 +72,6 @@ const message2 = new Message({
         id: sessionId
     }
 })
-const res2 = await agentClient.queryIo(io, 'smartexample.entrypoint', message2)
+const res2 = await agentClient.queryIo(io, 'smartexample', 'entrypoint', message2)
 console.log("=======\n", res2.getContent())
 console.log("=======\n", res2.getSession())

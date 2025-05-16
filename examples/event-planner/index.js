@@ -479,7 +479,7 @@ async function main() {
   const createRequest = "I need to schedule a design review meeting next Monday at 2pm for 1 hour with the design team. Today is 11th May 2025.";
   
   console.log(`User request: "${createRequest}"`);
-  const createResponse = await client.queryIo(natsIO, 'eventPlanner.plannerAgent', new Message({
+  const createResponse = await client.queryIo(natsIO, 'eventPlanner', 'plannerAgent', new Message({
     content: createRequest,
     session: {
       id: uuidv4(),
@@ -495,7 +495,7 @@ async function main() {
   const searchRequest = "Show me all meetings with Bob next month. Today is october 2023.";
   
   console.log(`User request: "${searchRequest}"`);
-  const searchResponse = await client.queryIo(natsIO, 'eventPlanner.eventFinderAgent', new Message({
+  const searchResponse = await client.queryIo(natsIO, 'eventPlanner', 'eventFinderAgent', new Message({
     content: searchRequest,
     session: {
       id: uuidv4(),
@@ -511,7 +511,7 @@ async function main() {
   const updateRequest = "Change the Weekly Team Meeting to start at 9:30am instead of 10am.";
   
   console.log(`User request: "${updateRequest}"`);
-  const updateResponse = await client.queryIo(natsIO, 'eventPlanner.plannerAgent', new Message({
+  const updateResponse = await client.queryIo(natsIO, 'eventPlanner', 'plannerAgent', new Message({
     content: updateRequest,
     session: {
       id: uuidv4(),
@@ -527,7 +527,7 @@ async function main() {
   const conflictRequest = "Do I have any scheduling conflicts next week?";
   
   console.log(`User request: "${conflictRequest}"`);
-  const conflictResponse = await client.queryIo(natsIO, 'eventPlanner.eventFinderAgent', new Message({
+  const conflictResponse = await client.queryIo(natsIO, 'eventPlanner', 'eventFinderAgent', new Message({
     content: conflictRequest,
     session: {
       id: uuidv4(),

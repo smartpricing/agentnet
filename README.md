@@ -267,7 +267,7 @@ const message = new Message({
 
 // Query the agent using the client
 console.log("Sending query to the entrypoint agent...");
-const response = await client.queryIo(natsIO, 'smartchat.entrypointAgent', message); // {namespace}.{name}
+const response = await client.queryIo(natsIO, 'smartchat', 'entrypointAgent', message);
 
 // Process the response
 console.log("Agent Response:", response.getContent());

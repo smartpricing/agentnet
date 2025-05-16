@@ -9,6 +9,7 @@ import {
     memoryStore,
     session 
 } from "./store/store.js";
+import { Conversation } from "./utils/conversation.js";
 
 export const AgentLoaderFile = _AgentLoader.AgentLoaderFile
 export const AgentLoaderJSON = _AgentLoader.AgentLoaderJSON
@@ -113,3 +114,5 @@ export class Response {
         this.#session = parsed.session
     }
 }
+
+export { Conversation };

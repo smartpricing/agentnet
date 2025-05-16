@@ -349,7 +349,7 @@ async function main() {
   
   // Start with the triage agent
   const client = AgentClient();
-  const res = await client.queryIo(natsIO, 'customerSupport.triageAgent', new Message({
+  const res = await client.queryIo(natsIO, 'customerSupport', 'triageAgent', new Message({
     content: customerQuery,
     session: {
       id: caseId,
@@ -363,7 +363,7 @@ async function main() {
   
   // For demonstration purposes, let's simulate a complete flow through the technical agent
   console.log("\nRouting to Technical Agent...");
-  const res2 = await client.queryIo(natsIO, 'customerSupport.technicalAgent', new Message({
+  const res2 = await client.queryIo(natsIO, 'customerSupport', 'technicalAgent', new Message({
     content: customerQuery,
     session: {
         id: caseId,
@@ -388,7 +388,7 @@ async function main() {
   
   // Now follow up with the customer
   console.log("\nFollowing up with customer after resolution...");
-  const res3 = await client.queryIo(natsIO, 'customerSupport.followupAgent', new Message({
+  const res3 = await client.queryIo(natsIO, 'customerSupport', 'followupAgent', new Message({
     content: `Please follow up on case ${caseId}`,
       session: {
         id: caseId
