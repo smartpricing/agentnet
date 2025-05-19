@@ -413,9 +413,9 @@ const compiledTravelAgent = await travelAgent.compile();
 
 ## Examples
 
-*   **Simple Agent Example**: For beginners, the [`examples/simple/README.md`](https://github.com/smartpricing/agentnet/blob/master/examples/simple/README.md) provides a minimal implementation of an accommodation agent, perfect for understanding the basic concepts of agent definition and tool binding.
+*   **Simple Agent Example**: For beginners, the [`examples/simple/index.js`](https://github.com/smartpricing/agentnet/blob/master/examples/simple/index.js) provides a minimal implementation of an accommodation agent, perfect for understanding the basic concepts of agent definition and tool binding.
 
-*   **Booking Example**: See a multi-agent system in action for a smart booking scenario in [`examples/smartness/README.md`](https://github.com/smartpricing/agentnet/blob/master/examples/smartness/README.md). This demonstrates concepts like agent discovery, handoffs, and tool usage in a practical setup.
+*   **Booking Example**: See a multi-agent system in action for a smart booking scenario in [`examples/smartness/index.js`](https://github.com/smartpricing/agentnet/blob/master/examples/smartness/index.js). This demonstrates concepts like agent discovery, handoffs, and tool usage in a practical setup.
 
 *   **Customer Support Example**: Explore a customer support system with specialized agents for different support domains in [`examples/customer-support/README.md`](https://github.com/smartpricing/agentnet/blob/master/examples/customer-support/README.md). This shows how agents can collaborate to resolve complex customer inquiries.
 
