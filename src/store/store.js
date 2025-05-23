@@ -122,7 +122,7 @@ export function postgresStore(config = null) {
 
 	return {
 		connect: async function() {
-			if (!db) {				
+			if (db === null) {				
 				// For URL-style connection string
 				if (typeof connectionConfig === 'string') {
 					db = pgPromise(connectionConfig);
