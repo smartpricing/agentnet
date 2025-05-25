@@ -132,8 +132,17 @@ export class Conversation {
       return;
     }
 
+    // Check if there's at least one user message in the last maxElements
+    const lastMessages = this.messages.slice(-maxElements);
+    const hasUserMessage = lastMessages.some(msg => msg.metadata.type === 'user_input');
+    
+    // Only trim if there's at least one user message in the resulting array
+    if (!hasUserMessage) {
+      return;
+    }
+    
     // First, keep only the latest maxElements
-    this.messages = this.messages.slice(-maxElements);
+    this.messages = lastMessages;
     
     // Then, ensure we have a user message at the start
     // Find the first user message
@@ -145,13 +154,10 @@ export class Conversation {
       }
     }
     
-    // If we didn't find a user message, or it's already at the start, nothing to do
-    if (firstUserMessageIndex === -1 || firstUserMessageIndex === 0) {
-      return;
+    // If the first user message is not at the start, trim all messages before it
+    if (firstUserMessageIndex > 0) {
+      this.messages = this.messages.slice(firstUserMessageIndex);
     }
-    
-    // Otherwise, trim all messages before the first user message
-    this.messages = this.messages.slice(firstUserMessageIndex);
   }
 
   /**
