@@ -70,6 +70,7 @@ class GeminiLLM extends BaseLLM {
         responseType: res.response?.candidates ? 'candidates' : 'unknown',
         hasContent: !!res.response?.candidates?.[0]?.content
       });
+
       return res;
     } catch (error) {
       console.log(error)
@@ -150,7 +151,7 @@ class GeminiLLM extends BaseLLM {
    */
   async onResponse(state, conversation, toolsAndHandoffsMap, response) {
     // Handle simple text response
-    if (response.text !== undefined) {
+    if (response.text !== undefined && (response.functionCalls === undefined || response.functionCalls.length === 0) ) {
       logger.debug('Gemini response contains text, returning directly');
       
       if (conversation instanceof Conversation) {
