@@ -123,6 +123,7 @@ async function processV1Alpha1Definition(definition, agentBuilder, bindings) {
     agentBuilder = configureStore(agentBuilder, spec.store, bindings);
     agentBuilder = await configureLLM(agentBuilder, spec.llm);
     agentBuilder = configureDiscoverySchemas(agentBuilder, spec.discoverySchemas);
+    agentBuilder = configureRunner(agentBuilder, spec.runner);
     
     // Set up tools
     const toolMap = configureTools(agentBuilder, spec.tools);
@@ -268,6 +269,25 @@ function configureTools(agentBuilder, toolsSpec) {
     }
     
     return toolMap;
+}
+
+/**
+ * Configures runner for an agent
+ * @param {object} agentBuilder - Agent builder instance
+ * @param {object} runnerSpec - Runner specification
+ * @returns {object} Updated agent builder
+ */
+function configureRunner(agentBuilder, runnerSpec) {
+    if (!runnerSpec) {
+        return agentBuilder;
+    }
+    
+    // Apply runner configuration to the agent's config
+    if (runnerSpec.maxRuns !== undefined) {
+        agentBuilder._config.runner.maxRuns = runnerSpec.maxRuns;
+    }
+    
+    return agentBuilder;
 }
 
 /**
