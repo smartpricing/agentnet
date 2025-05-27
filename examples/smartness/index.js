@@ -54,7 +54,7 @@ await agentPricing.compile()
 await new Promise(resolve => setTimeout(resolve, 2000))
 
 // Agent client
-const sessionId = 'f3f4dfe9-3ca2-4e10-956f-e8d19ece5592' //uuidv4()
+const sessionId = 'f3f4dfe9-3ca2-4e10-956f-e8d19ece5591' //uuidv4()
 const agentClient = AgentClient()   
 const message = new Message({
     content: "What rooms do you have from 2025-05-25 to 2025-05-30 for 3 guests For the hotel Flora? Give me the review of the hotel Flora",

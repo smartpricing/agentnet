@@ -1,6 +1,6 @@
 {
   "name": "agentnet",
-  "version": "0.1.8",
+  "version": "0.1.10",
   "type": "module",
   "description": "Agent library used by Smartness",
   "main": "src/index.js",

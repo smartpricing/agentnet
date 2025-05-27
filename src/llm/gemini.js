@@ -149,9 +149,10 @@ class GeminiLLM extends BaseLLM {
    * @param {Object} response - The model response to process
    * @returns {Promise<string|null>} Text response or null if processing tool calls
    */
-  async onResponse(state, conversation, toolsAndHandoffsMap, response) {
+  async onResponse(state, conversation, toolsAndHandoffsMap, response, run) {
     // Handle simple text response
-    if (response.text !== undefined && (response.functionCalls === undefined || response.functionCalls.length === 0) ) {
+    logger.info('Gemini onResponse', {text: response.text !== undefined, functionCalls: response.functionCalls?.length, run: run});
+    if (response.text !== undefined && (response.functionCalls === undefined || response.functionCalls.length === 0 || run > 1) ) {
       logger.debug('Gemini response contains text, returning directly');
       
       if (conversation instanceof Conversation) {
