@@ -267,7 +267,7 @@ export async function build(
 				logger.debug(`LLM response received for agent ${agentName}`);
 				
 				// Process the response
-				const finished = await api.onResponse(state, contents, toolsAndHandoffsMap, response, run);
+				const finished = await api.onResponse(state, contents, toolsAndHandoffsMap, response);
 				
 				// If not finished, continue with the next run
 				if (finished == null) {

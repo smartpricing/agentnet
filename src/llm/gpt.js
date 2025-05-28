@@ -156,7 +156,7 @@ class OpenAILLM extends BaseLLM {
 	 * @param {Object} response - The model response to process
 	 * @returns {Promise<string|null>} Text response or null if processing tool calls
 	 */
-	async onResponse(state, conversation, toolsAndHandoffsMap, response) {
+	async onResponse(state, conversation, toolsAndHandoffsMap, response) { // TODO verify run and tool calls like gemini
 		if (response.output_text !== undefined && response.output_text.length > 0 ) {
 			logger.debug('OpenAI response contains text, returning directly');
 			

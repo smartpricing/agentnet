@@ -66,6 +66,7 @@ class GeminiLLM extends BaseLLM {
     
     try {
       const res = await client.models.generateContent(input);
+      console.log(JSON.stringify(res, null, 2))
       logger.debug('Gemini response received', {
         responseType: res.response?.candidates ? 'candidates' : 'unknown',
         hasContent: !!res.response?.candidates?.[0]?.content
@@ -149,12 +150,11 @@ class GeminiLLM extends BaseLLM {
    * @param {Object} response - The model response to process
    * @returns {Promise<string|null>} Text response or null if processing tool calls
    */
-  async onResponse(state, conversation, toolsAndHandoffsMap, response, run) {
+  async onResponse(state, conversation, toolsAndHandoffsMap, response) {
     // Handle simple text response
-    logger.info('Gemini onResponse', {text: response.text !== undefined, functionCalls: response.functionCalls?.length, run: run});
-    if (response.text !== undefined && (response.functionCalls === undefined || response.functionCalls.length === 0 || run > 1) ) {
-      logger.debug('Gemini response contains text, returning directly');
-      
+    logger.info('Gemini onResponse', {text: response.text !== undefined, functionCalls: response.functionCalls?.length });
+
+    if (response.text !== undefined) {
       if (conversation instanceof Conversation) {
         const modelResponse = {
           role: 'model',
@@ -162,7 +162,10 @@ class GeminiLLM extends BaseLLM {
         };
         conversation.addModelResponse(modelResponse);
       }
-      
+    }
+
+    if (response.text !== undefined && (response.functionCalls === undefined || response.functionCalls.length === 0)) {
+      logger.debug('Gemini response contains text, returning directly');
       return response.text;
     }
     
