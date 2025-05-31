@@ -200,7 +200,7 @@ export async function build(
 		
 		// Create the executor function
 		const executor = async function(state, contents, run = 0) {
-			logger.info(`Running agent ${agentName} (run ${run}/${maxRuns}), conversation length: ${contents.length}`);
+			logger.info(`Running agent ${agentName} (run ${run}/${maxRuns}), conversation length: ${contents.getRawConversation().length}`);
 			
 			// Emit run event
 			await emit(hooks, 'executorRun', {
@@ -222,7 +222,8 @@ export async function build(
 				});
 				
 				// Return the last message as the result
-				return contents[contents.length - 1];
+				const rawConversation = contents.getRawConversation();
+				return rawConversation[rawConversation.length - 1];
 			}
 			
 			try {

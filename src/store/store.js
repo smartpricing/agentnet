@@ -9,7 +9,7 @@ export function session (id) {
 
 	return {
 		query: async function (agentInstance, input) {
-			return await agentInstance.query(state, conversationManager.getRawConversation(), input)
+			return await agentInstance.query(state, conversationManager, input)
 		},
 		setState: function (_state) {
 			state = _state
@@ -26,16 +26,15 @@ export function session (id) {
 			conversationManager.trim(elementsToKeep)
 		},
 		setConversation: function (_conversation) {
-			// Support both array and Conversation objects
 			if (_conversation instanceof Conversation) {
 				conversationManager = _conversation;
-			} else if (Array.isArray(_conversation)) {
-				conversationManager.importFromArray(_conversation);
+			} else {
+				console.warn("Attempted to set conversation with an invalid type. Expected a Conversation object.");
+				conversationManager = new Conversation();
 			}
 		},	
 		getConversation: function () {
-			// Return raw conversation for backward compatibility
-			return conversationManager.getRawConversation()
+			return conversationManager
 		},
 		getConversationManager: function() {
 			return conversationManager
@@ -48,26 +47,23 @@ export function session (id) {
 				// Handle both old-style conversation array and new-style serialized Conversation
 				if (parsedState.conversationData) {
 					conversationManager.deserialize(parsedState.conversationData)
-				} else if (Array.isArray(parsedState.conversation)) {
-					conversationManager.importFromArray(parsedState.conversation)
 				}
 				
 				state = parsedState.state || {}
 				return {
 					// Return raw conversation for backward compatibility
-					conversation: conversationManager.getRawConversation(),
+					conversation: conversationManager,
 					state: state
 				}
 			}
 			return {
-				conversation: [],
+				conversation: new Conversation(), // Ensure it's a Conversation object
 				state: {}
 			}
 		},
 		dump: async function (stateStore) {
 			return await stateStore.set(id, JSON.stringify({
-				// Keep conversation array for backward compatibility
-				conversation: conversationManager.getRawConversation(),
+				// Keep conversation array for backward compatibility - REMOVED
 				// Add serialized conversation data with metadata
 				conversationData: conversationManager.serialize(),
 				state: state

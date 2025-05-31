@@ -48,7 +48,7 @@ export class BaseLLM {
 
   /**
    * Add a user prompt to the conversation
-   * @param {Array|Conversation} conversation - The conversation history
+   * @param {Conversation} conversation - The conversation history
    * @param {string} formattedPrompt - The formatted user prompt
    * @returns {Promise<void>}
    */
@@ -57,17 +57,14 @@ export class BaseLLM {
       promptPreview: formattedPrompt.substring(0, 100)
     });
     
-    // Handle both raw array and Conversation object
-    if (conversation instanceof Conversation) {
-      // Subclasses should override this to add their specific format
-      // But we'll add a generic format by default
-      conversation.addUserMessage({
-        role: 'user',
-        content: formattedPrompt
-      });
-    }
-    // For array, we rely on subclass implementations
-    // Subclasses must implement appropriate conversation format
+    // conversation is now always a Conversation object
+    // Subclasses should override this to add their specific format
+    // But we'll add a generic format by default
+    conversation.addUserMessage({
+      role: 'user',
+      content: formattedPrompt
+    });
+    // Removed logic for plain arrays
   }
 
   /**

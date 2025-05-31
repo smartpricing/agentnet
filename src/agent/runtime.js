@@ -2,6 +2,7 @@ import { build, makeToolsAndHandoffsMap } from "./executor.js"
 import { logger } from "../utils/logger.js"
 import { Response, SessionStore } from "../index.js"
 import { createAgentRuntime } from "../transport/index.js"
+import { Conversation } from "../utils/conversation.js"
 
 export async function AgentRuntime(agentConfig) {
     const {
@@ -72,7 +73,7 @@ export async function AgentRuntime(agentConfig) {
             // Load and merge session state and session data
             let storeState = {
                 state: {},
-                conversation: []
+                conversation: new Conversation()
             }
             if (store && sessionId) {
                 const sessionStore = new SessionStore(storeStateSessionId)
@@ -85,7 +86,7 @@ export async function AgentRuntime(agentConfig) {
                     storeState.state[key] = session[key]
                 }         
                 storeState.conversation = _storeState.conversation
-                logger.info(`Loaded session state for agent ${agentName} with session id ${storeStateSessionId}, current conversation length ${storeState.conversation.length}`);                
+                logger.info(`Loaded session state for agent ${agentName} with session id ${storeStateSessionId}, current conversation length ${storeState.conversation.getRawConversation().length}`);                
             }
 
             const formattedInput = typeof content === 'string' ? content : JSON.stringify(content);
@@ -109,7 +110,7 @@ export async function AgentRuntime(agentConfig) {
                 sessionStore.setState(storeState.state)
                 sessionStore.trimConversation(10)
                 await sessionStore.dump(store.instance)
-                logger.info(`Dumped session state for agent ${agentName} with session id ${storeStateSessionId}, current conversation length ${storeState.conversation.length}`);                
+                logger.info(`Dumped session state for agent ${agentName} with session id ${storeStateSessionId}, current conversation length ${storeState.conversation.getRawConversation().length}`);                
             }
 
             // Before returning, remove _ from the state
