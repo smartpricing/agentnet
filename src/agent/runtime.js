@@ -108,7 +108,7 @@ export async function AgentRuntime(agentConfig) {
                 await store.instance.connect()
                 sessionStore.setConversation(storeState.conversation)
                 sessionStore.setState(storeState.state)
-                sessionStore.trimConversation(10)
+                sessionStore.trimConversation(runner?.maxConversationLength || 10)
                 await sessionStore.dump(store.instance)
                 logger.info(`Dumped session state for agent ${agentName} with session id ${storeStateSessionId}, current conversation length ${storeState.conversation.getRawConversation().length}`);                
             }

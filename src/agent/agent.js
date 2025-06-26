@@ -27,7 +27,8 @@ const DEFAULT_CONFIG = {
         apiVersion: "agentnet/v1alpha1" // Default API version
     },
     runner: { 
-        maxRuns: 10
+        maxRuns: 10,
+        maxConversationLength: 10
     }
 }
 
@@ -75,7 +76,8 @@ const AGENT_CONFIG_SCHEMA = {
         runner: {
             type: 'object',
             properties: {
-                maxRuns: { type: 'number' }
+                maxRuns: { type: 'number' },
+                maxConversationLength: { type: 'number' }
             }
         },
         on: { type: 'object' }
@@ -211,6 +213,13 @@ export function Agent() {
             if (config.runner.maxRuns <= 0) {
                 throw new ConfigurationError("runner.maxRuns must be greater than 0", { 
                     maxRuns: config.runner.maxRuns 
+                });
+            }
+            
+            validateType(config.runner.maxConversationLength, 'number', 'runner.maxConversationLength', 'agent_config');
+            if (config.runner.maxConversationLength <= 0) {
+                throw new ConfigurationError("runner.maxConversationLength must be greater than 0", { 
+                    maxConversationLength: config.runner.maxConversationLength 
                 });
             }
             

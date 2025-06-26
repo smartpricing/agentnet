@@ -5,6 +5,8 @@ metadata:
   name: entrypoint
   namespace: smartexample
 spec:
+  runner:
+    maxConversationLength: 100
   io:
     - type: NatsIO
       bindings:

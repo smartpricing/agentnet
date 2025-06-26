@@ -287,6 +287,10 @@ function configureRunner(agentBuilder, runnerSpec) {
         agentBuilder._config.runner.maxRuns = runnerSpec.maxRuns;
     }
     
+    if (runnerSpec.maxConversationLength !== undefined) {
+        agentBuilder._config.runner.maxConversationLength = runnerSpec.maxConversationLength;
+    }
+    
     return agentBuilder;
 }
 
