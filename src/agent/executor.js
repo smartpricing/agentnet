@@ -38,12 +38,15 @@ export function makeToolsAndHandoffsMap(llmType, toolsAndHandoffsMap, tools, han
 	if (!tools) {
 		return;
 	}
-	
 	try {
 		// Process tools
 		for (const tool of tools) {
 			if (!tool) {
 				logger.warn('Skipping undefined tool');
+				continue;
+			}
+			if (toolsAndHandoffsMap[tool.name] !== undefined) {
+				logger.warn('Skipping duplicate tool', { tool });
 				continue;
 			}
 			
@@ -76,6 +79,11 @@ export function makeToolsAndHandoffsMap(llmType, toolsAndHandoffsMap, tools, han
                 if (llmType === 'openai') {
                     handoff.schema.type = 'function'
                 }
+
+				if (toolsAndHandoffsMap[handoff.name] !== undefined) {
+					logger.warn('Skipping duplicate handoff', { handoff });
+					continue;
+				}				
 				
 				// Add handoff schema to tools list
 				toolsAndHandoffsMap.tools.push(handoff.schema);

@@ -42,7 +42,6 @@ class GeminiLLM extends BaseLLM {
    */
   async callModel(llmClientConfig, context) {
     const { client, toolsAndHandoffsMap, conversation } = context;
-    
     // conversation is always a Conversation object
     const input = { ...llmClientConfig, contents: conversation.getRawConversation() };
 
@@ -61,6 +60,7 @@ class GeminiLLM extends BaseLLM {
     });
     
     try {
+      
       const res = await client.models.generateContent(input);
       logger.debug('Gemini response', res)
       logger.debug('Gemini response received', {
