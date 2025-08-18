@@ -46,7 +46,6 @@ export function makeToolsAndHandoffsMap(llmType, toolsAndHandoffsMap, tools, han
 				continue;
 			}
 			if (toolsAndHandoffsMap[tool.name] !== undefined) {
-				logger.warn('Skipping duplicate tool', { tool });
 				continue;
 			}
 			
@@ -81,7 +80,6 @@ export function makeToolsAndHandoffsMap(llmType, toolsAndHandoffsMap, tools, han
                 }
 
 				if (toolsAndHandoffsMap[handoff.name] !== undefined) {
-					logger.warn('Skipping duplicate handoff', { handoff });
 					continue;
 				}				
 				
