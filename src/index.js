@@ -7,7 +7,8 @@ import {
     redisStore, 
     postgresStore, 
     memoryStore,
-    session 
+    session,
+    noStore
 } from "./store/store.js";
 import { Conversation } from "./utils/conversation.js";
 
@@ -27,7 +28,9 @@ export const GPT = _GPT
 export const PostgresStore = postgresStore
 export const RedisStore = redisStore
 export const MemoryStore = memoryStore
+export const NoStore = noStore
 export const SessionStore = session
+
 
 import { connect } from "@nats-io/transport-node"
 export const NatsIO = (config) => {
@@ -53,18 +56,21 @@ export const Bindings = {
     NatsIO: 'NatsIO',
     Postgres: 'Postgres',
     Redis: 'Redis',
-    Memory: 'Memory'
+    Memory: 'Memory',
+    NoStore: 'NoStore'
 }
 
 export class Message {
     #content 
     #session
+    #previousConversation
     constructor(input) {
         if (typeof input === 'string') {
             this.#content = input
         } else {
             this.#content = input.content 
             this.#session = input.session || {}
+            this.#previousConversation = input.previousConversation || null
         }
     }
     getContent() {
@@ -76,16 +82,21 @@ export class Message {
     getSession() {
         return this.#session
     }
+    getPreviousConversation() {
+        return this.#previousConversation
+    }
     serialize() {
         return JSON.stringify({
             content: this.#content,
-            session: this.#session
+            session: this.#session,
+            previousConversation: this.#previousConversation
         })
     }
     deserialize(data) {
         const parsed = JSON.parse(data)
         this.#content = parsed.content 
         this.#session = parsed.session || {}
+        this.#previousConversation = parsed.previousConversation || null
     }
 }
 

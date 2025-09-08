@@ -205,3 +205,16 @@ export function memoryStore () {
 		}	
 	}
 }
+
+export function noStore () {
+	return {
+		connect: async function () {},
+		disconnect: async function () {},
+		set: async function (key, value) {
+			return null
+		},
+		get: async function (key) {
+			return null
+		}	
+	}
+}

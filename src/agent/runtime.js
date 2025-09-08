@@ -68,6 +68,7 @@ export async function AgentRuntime(agentConfig) {
             const content = message.getContent()
             const session = message.getSession()
             const sessionId = message.getSessionId()
+            const previousConversation = message.getPreviousConversation()
             const storeStateSessionId = namespace + "." + agentName + "." + sessionId
 
             // Load and merge session state and session data
@@ -87,6 +88,12 @@ export async function AgentRuntime(agentConfig) {
                 }         
                 storeState.conversation = _storeState.conversation
                 logger.info(`Loaded session state for agent ${agentName} with session id ${storeStateSessionId}, current conversation length ${storeState.conversation.getRawConversation().length}`);                
+            }
+
+            // Import previous conversation if provided and current conversation is empty
+            if (previousConversation && storeState.conversation.getMessages().length === 0) {
+                storeState.conversation.importFromArray(previousConversation)
+                logger.info(`Imported ${previousConversation.length} previous messages for session ${storeStateSessionId}`)
             }
 
             const formattedInput = typeof content === 'string' ? content : JSON.stringify(content);
