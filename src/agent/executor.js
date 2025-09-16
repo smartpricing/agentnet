@@ -215,24 +215,38 @@ export async function build(
 				state: state,
 				contents: contents
 			});
-			
+
+			const calledTools = api.getCalledTools();
+			const modeStopTools = toolsAndHandoffsMap.tools.filter(tool => tool.mode === 'stopAfterOneExecution').map(tool => tool.name);
+
+			if (modeStopTools.some(tool => calledTools.includes(tool))) {
+				api.resetCalledTools();
+				llmConfig = await api.resetToolConfig(llmConfig);
+			}
+
 			// Check for max runs exceeded
+			if (run == maxRuns - 1) {
+				logger.info(`Agent ${agentName} almost max runs reached: ${run}/${maxRuns}`);
+				
+				//return rawConversation[rawConversation.length - 1];
+				// toolsAndHandoffsMap = { tools: [] }
+				try {
+					llmConfig = await api.resetToolConfig(llmConfig);
+					api.resetCalledTools();
+				} catch (error) {
+					logger.error(`Error resetting tool config for agent ${agentName}`, { error });
+				}
+			}
+
 			if (run >= maxRuns) {
-				logger.warn(`Agent ${agentName} max runs reached: ${run}/${maxRuns}`);
-				
-				await emit(hooks, 'executorMaxRuns', {
-					agentName: agentName,
-					run: run,
-					state: state,
-					contents: contents
-				});
-				
-				// Return the last message as the result
+				logger.warn(`Agent ${agentName} max over runs reached: ${run}/${maxRuns}`);
+				api.resetCalledTools();
 				const rawConversation = contents.getRawConversation();
-				return rawConversation[rawConversation.length - 1];
+				return rawConversation.join('\n');
 			}
 			
 			try {
+				
 				// Prepare input for LLM
 				const input = {
 					client: client,

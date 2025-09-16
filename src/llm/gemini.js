@@ -50,7 +50,11 @@ class GeminiLLM extends BaseLLM {
       input.config.tools = toolsAndHandoffsMap.tools;
     } else if (toolsAndHandoffsMap.tools.length > 0) {
       input.config = input.config || {};
-      input.config.tools = [{ functionDeclarations: toolsAndHandoffsMap.tools }];
+      // remove the mode key from the tools, for gpt is not necessary beacuase it doesn't bother if is present or not
+      input.config.tools = [{ functionDeclarations: toolsAndHandoffsMap.tools.map(tool => {
+        const { mode, ...toolWithoutMode } = tool;
+        return toolWithoutMode;
+      }) }];
     }
 
     logger.debug('Calling Gemini model', { 
@@ -189,7 +193,10 @@ const geminiLLM = new GeminiLLM();
 export default {
   type: geminiLLM.type,
   getClient: geminiLLM.getClient.bind(geminiLLM),
+  resetToolConfig: geminiLLM.resetToolConfig.bind(geminiLLM),
   prompt: geminiLLM.prompt.bind(geminiLLM),
   callModel: geminiLLM.callModel.bind(geminiLLM),
-  onResponse: geminiLLM.onResponse.bind(geminiLLM)
+  onResponse: geminiLLM.onResponse.bind(geminiLLM),
+  getCalledTools: geminiLLM.getCalledTools.bind(geminiLLM), 
+  resetCalledTools: geminiLLM.resetCalledTools.bind(geminiLLM)
 }

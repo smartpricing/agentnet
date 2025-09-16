@@ -10,7 +10,7 @@ import { Conversation } from '../utils/conversation.js'
 class OpenAILLM extends BaseLLM {
 	constructor() {
 		super('openai');
-	}
+	}	
 
 	/**
 	 * Initializes and returns an OpenAI client
@@ -31,6 +31,11 @@ class OpenAILLM extends BaseLLM {
 				{ originalError: error }
 			);
 		}
+	}
+
+	async resetToolConfig (llmClientConfig) {
+		llmClientConfig.tool_choice = 'auto';
+		return llmClientConfig;
 	}
 
 	/**
@@ -188,7 +193,10 @@ const openaiLLM = new OpenAILLM();
 export default {
 	type: openaiLLM.type,
 	getClient: openaiLLM.getClient.bind(openaiLLM),
+	resetToolConfig: openaiLLM.resetToolConfig.bind(openaiLLM),
 	prompt: openaiLLM.prompt.bind(openaiLLM),
 	callModel: openaiLLM.callModel.bind(openaiLLM),
-	onResponse: openaiLLM.onResponse.bind(openaiLLM)
+	onResponse: openaiLLM.onResponse.bind(openaiLLM),
+	getCalledTools: openaiLLM.getCalledTools.bind(openaiLLM),
+	resetCalledTools: openaiLLM.resetCalledTools.bind(openaiLLM)
 }

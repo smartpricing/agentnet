@@ -202,6 +202,9 @@ export function memoryStore () {
 		},
 		get: async function (key) {
 			return state[key] || null
+		},
+		getAll: async function () {
+			return state
 		}	
 	}
 }

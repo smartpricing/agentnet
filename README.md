@@ -13,6 +13,282 @@
 - [Direct Access to Agent Fluent Interface](#direct-access-to-agent-fluent-interface)
 - [Examples](#examples)
 
+## Basic usage
+
+```javascript
+import { Agent, LLMRuntime } from '/path/to/agentnet/src/index.js'
+```
+
+### Core Agent Building Pattern
+
+AgentNet uses a fluent/builder pattern for creating agents:
+
+```javascript
+const agent = await Agent()
+    .setMetadata(metadata)
+    .withStore(store, initialState)
+    .withLLM(runtime, config)
+    .withRunner(runnerConfig)
+    .prompt(promptFunction)
+    .addTool(toolDefinition, handlerFunction)  // optional, can add multiple
+    .compile()
+```
+
+### Agent Configuration Methods
+
+### `.setMetadata(metadata)`
+Sets agent metadata for identification and description.
+
+```javascript
+.setMetadata({
+    name: "agent_name",
+    description: "Agent description"
+})
+```
+
+### `.withStore(store, initialState)`
+Configures the agent's state storage.
+
+```javascript
+.withStore(store, {})  // Empty initial state
+```
+
+### `.withLLM(runtime, config)`
+Configures the Language Model runtime and settings.
+
+**For GPT:**
+```javascript
+.withLLM(LLMRuntime.GPT, {
+    model: "gpt-4-turbo-preview",
+    instructions: "System instructions here",
+    temperature: 0,
+    tool_choice: "auto" | "required" | "none",
+    text: {
+        format: {
+            type: "json_schema",
+            name: "schema_name",
+            schema: { /* JSON Schema object */ }
+        }
+    }
+})
+```
+
+**For Gemini:**
+```javascript
+.withLLM(LLMRuntime.GEMINI, {
+    model: "gemini-2.0-flash-exp",
+    systemInstruction: "System instructions here",
+    config: {
+        temperature: 0.0,
+        responseMimeType: "application/json",  // For JSON responses
+        responseSchema: { /* JSON Schema */ },
+        toolConfig: {
+            functionCallingConfig: {
+                mode: "AUTO" | "ANY" | "NONE"
+            }
+        }
+    }
+})
+```
+
+### `.withRunner(config)`
+Configures execution parameters.
+
+```javascript
+.withRunner({
+    maxRuns: 5,  // Maximum number of execution runs
+    maxConversationLength: 200  // Maximum conversation length
+})
+```
+
+### `.prompt(function)`
+Defines the prompt generation function.
+
+```javascript
+.prompt(async (state, input) => {
+    // state: Current agent state
+    // input: Input message/data
+    return `Formatted prompt with ${input} and ${state.someValue}`
+})
+```
+
+### `.addTool(definition, handler)`
+Adds tools/functions the agent can call.
+
+```javascript
+.addTool(
+    {
+        name: "tool_name",
+        description: "Tool description",
+        mode: "stopAfterOneExecution",  // Optional mode
+        parameters: {
+            type: "object",
+            properties: {
+                param1: { type: "string", description: "Parameter description" }
+            },
+            required: ["param1"]
+        }
+    },
+    async (state, args) => {
+        // Handler function
+        // args contains the parameters passed by the LLM
+        return "Tool execution result"
+    }
+)
+```
+
+### `.compile()`
+Finalizes and compiles the agent configuration.
+
+```javascript
+const compiledAgent = await agent.compile()
+```
+
+## Using Compiled Agents
+
+### Query Execution
+```javascript
+const response = await compiledAgent.query(inputMessage)
+const content = response.getContent()
+```
+
+### LLM Runtime Enums
+
+```javascript
+LLMRuntime.GPT     // For OpenAI GPT models
+LLMRuntime.GEMINI  // For Google Gemini models
+```
+
+### JSON Schema Response Format
+
+### Structured Output Configuration
+
+For enforcing JSON responses with specific schemas:
+
+**GPT Configuration:**
+```javascript
+text: {
+    format: {
+        type: "json_schema",
+        name: "response_name",
+        schema: {
+            type: "object",
+            properties: {
+                field1: { type: "string", description: "..." },
+                field2: { type: "number", description: "..." }
+            },
+            required: ["field1", "field2"],
+            additionalProperties: false
+        }
+    }
+}
+```
+
+**Gemini Configuration:**
+```javascript
+config: {
+    responseMimeType: "application/json",
+    responseSchema: {
+        type: "object",
+        properties: {
+            field1: { type: "string", description: "..." },
+            field2: { type: "number", description: "..." }
+        },
+        required: ["field1", "field2"]
+        // Note: Gemini doesn't support additionalProperties
+    }
+}
+```
+
+### Tool Choice Configuration
+
+### GPT Tool Choice Options
+- `"auto"` - Model decides whether to call tools
+- `"required"` - Model must call at least one tool
+- `"none"` - Model cannot call tools
+
+### Gemini Tool Choice (via functionCallingConfig)
+- `"AUTO"` - Model decides whether to call tools
+- `"ANY"` - Model must call at least one tool
+- `"NONE"` - Model cannot call tools
+
+### Special Tool Mode
+
+```javascript
+{
+    name: "tool_name",
+    mode: "stopAfterOneExecution",  // Stops after single execution
+    // ... rest of tool definition
+}
+```
+
+### State Management
+
+The state object passed to prompt functions and tool handlers maintains conversation context and can store custom data between agent interactions.
+
+```javascript
+.prompt(async (state, input) => {
+    // Access state properties
+    console.log(state.chatHistory)
+    console.log(state.customProperty)
+    return promptString
+})
+```
+
+### Error Handling & Response Access
+
+```javascript
+const response = await agent.query(message)
+const content = response.getContent()  // Extract response content
+```
+
+### Complete Example
+
+```javascript
+import { Agent, LLMRuntime } from '/path/to/agentnet/index.js'
+
+const agent = await Agent()
+    .setMetadata({
+        name: "example_agent",
+        description: "An example agent"
+    })
+    .withStore(store, {})
+    .withLLM(LLMRuntime.GPT, {
+        model: "gpt-4-turbo-preview",
+        instructions: "You are a helpful assistant",
+        temperature: 0,
+        tool_choice: "auto"
+    })
+    .withRunner({
+        maxRuns: 3,
+        maxConversationLength: 100
+    })
+    .prompt(async (state, input) => {
+        return `Process this request: ${input}`
+    })
+    .addTool(
+        {
+            name: "search",
+            description: "Search for information",
+            parameters: {
+                type: "object",
+                properties: {
+                    query: { type: "string" }
+                },
+                required: ["query"]
+            }
+        },
+        async (state, args) => {
+            return `Search results for: ${args.query}`
+        }
+    )
+    .compile()
+
+// Use the agent
+const response = await agent.query("Find information about hotels")
+console.log(response.getContent())
+```
+
 
 ## Introduction
 

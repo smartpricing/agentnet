@@ -12,6 +12,7 @@ export class BaseLLM {
    */
   constructor(providerType) {
     this.type = providerType;
+    this.calledTools = [];
   }
 
   /**
@@ -21,6 +22,18 @@ export class BaseLLM {
    */
   async getClient() {
     throw new Error('getClient() must be implemented by subclasses');
+  }
+
+  async resetToolConfig(config) {
+    return config;
+  }
+
+  getCalledTools() {
+    return this.calledTools;
+  }
+
+  resetCalledTools() {
+    this.calledTools = [];
   }
 
   /**
@@ -106,6 +119,7 @@ export class BaseLLM {
       } else {
         result = await toolsAndHandoffsMap[name].function(state, args);
       }
+      this.calledTools.push(name);
       
       logger.debug('Tool execution successful', { toolName: name });
       return result;

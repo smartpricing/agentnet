@@ -361,6 +361,84 @@ export function Agent() {
     }
 
     /**
+     * Adds a tool with its schema and optional handler function
+     * @param {Object} toolDefinition - Tool definition including name, description, parameters
+     * @param {Function} handlerFunction - Optional handler function for the tool
+     * @returns {Object} Agent builder for chaining
+     */
+    function addTool(toolDefinition, handlerFunction = null) {
+        if (!toolDefinition || !toolDefinition.name) {
+            throw new ConfigurationError("Tool definition must have a name", {
+                toolDefinition: toolDefinition
+            });
+        }
+        
+        // Store the tool schema in the format expected by executor
+        config.toolsSchemas[toolDefinition.name] = {
+            name: toolDefinition.name,
+            schema: toolDefinition,
+            function: handlerFunction
+        };
+        
+        return this;
+    }
+
+    /**
+     * Binds a handler function to an existing tool
+     * @param {String} toolName - Name of the tool
+     * @param {Function} handlerFunction - Handler function for the tool
+     * @returns {Object} Agent builder for chaining
+     */
+    function bindTool(toolName, handlerFunction) {
+        if (!config.toolsSchemas[toolName]) {
+            throw new ConfigurationError(`Tool ${toolName} not found. Add the tool first using addTool()`, {
+                availableTools: Object.keys(config.toolsSchemas)
+            });
+        }
+        
+        if (typeof handlerFunction !== 'function') {
+            throw new ConfigurationError(`Handler for tool ${toolName} must be a function`, {
+                provided: typeof handlerFunction
+            });
+        }
+        
+        config.toolsSchemas[toolName].function = handlerFunction;
+        return this;
+    }
+
+    /**
+     * Sets the prompt handler
+     * @param {Function} handler - Prompt handler function
+     * @returns {Object} Agent builder for chaining
+     */
+    function prompt(handler) {
+        if (typeof handler !== 'function') {
+            throw new ConfigurationError("Prompt handler must be a function", {
+                provided: typeof handler
+            });
+        }
+        
+        config.on.prompt = handler;
+        return this;
+    }
+
+    /**
+     * Sets the response handler
+     * @param {Function} handler - Response handler function
+     * @returns {Object} Agent builder for chaining
+     */
+    function response(handler) {
+        if (typeof handler !== 'function') {
+            throw new ConfigurationError("Response handler must be a function", {
+                provided: typeof handler
+            });
+        }
+        
+        config.on.response = handler;
+        return this;
+    }
+
+    /**
      * Sets agent metadata
      * @param {Object} metadata - Agent metadata
      * @returns {Object} Agent builder for chaining
@@ -381,6 +459,39 @@ export function Agent() {
     }
 
     /**
+     * Configures runner settings
+     * @param {Object} runnerConfig - Runner configuration
+     * @returns {Object} Agent builder for chaining
+     */
+    function withRunner(runnerConfig) {
+        if (!runnerConfig) {
+            throw new ConfigurationError("Runner configuration is required", {
+                provided: runnerConfig
+            });
+        }
+        
+        if (runnerConfig.maxRuns !== undefined) {
+            if (typeof runnerConfig.maxRuns !== 'number' || runnerConfig.maxRuns <= 0) {
+                throw new ConfigurationError("maxRuns must be a positive number", {
+                    provided: runnerConfig.maxRuns
+                });
+            }
+            config.runner.maxRuns = runnerConfig.maxRuns;
+        }
+        
+        if (runnerConfig.maxConversationLength !== undefined) {
+            if (typeof runnerConfig.maxConversationLength !== 'number' || runnerConfig.maxConversationLength <= 0) {
+                throw new ConfigurationError("maxConversationLength must be a positive number", {
+                    provided: runnerConfig.maxConversationLength
+                });
+            }
+            config.runner.maxConversationLength = runnerConfig.maxConversationLength;
+        }
+        
+        return this;
+    }
+
+    /**
      * Gets all registered tool schemas
      * @returns {Object} Map of tool schemas
      */
@@ -395,6 +506,7 @@ export function Agent() {
     async function compile() {
         // Validate configuration before compiling
         validateConfiguration();
+        
         
         try {
             logger.info(`Compiling agent ${config.metadata.name}`);
@@ -422,9 +534,14 @@ export function Agent() {
         addIO,
         withLLM,
         withStore,
+        withRunner,
         on,
         addDiscoverySchema,
         addToolSchema,
+        addTool,
+        bindTool,
+        prompt,
+        response,
         compile,
         setMetadata,
         getToolsSchemas,
