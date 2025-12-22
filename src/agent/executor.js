@@ -166,6 +166,8 @@ async function safeExecute(func, name, type, state, input, timeout = DEFAULT_TOO
  * @param {Object} api - LLM API
  * @param {Object} llmConfig - LLM configuration
  * @param {Object} runner - Runner configuration
+ * @param {Object} callbacks - Callback functions
+ * @param {Function} callbacks.onLLMResponse - Called after each LLM call with (state, response, usage)
  * @returns {Function} Executor function
  */
 export async function build(
@@ -174,7 +176,8 @@ export async function build(
 	agentName, 
 	api, 
 	llmConfig, 
-	runner
+	runner,
+	callbacks = {}
 ) {
 	const maxRuns = runner?.maxRuns || 10;
 	
@@ -286,6 +289,16 @@ export async function build(
 				);
 				
 				logger.debug(`LLM response received for agent ${agentName}`);
+				
+				// Call onLLMResponse callback if defined
+				if (callbacks.onLLMResponse) {
+					try {
+						const usage = api.extractUsage(response);
+						await callbacks.onLLMResponse(state, response, usage);
+					} catch (error) {
+						logger.warn(`Error in onLLMResponse callback for agent ${agentName}`, { error });
+					}
+				}
 				
 				// Process the response
 				const finished = await api.onResponse(state, contents, toolsAndHandoffsMap, response);

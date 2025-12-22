@@ -16,7 +16,7 @@ export async function AgentRuntime(agentConfig) {
         handoffs,
         io: ioInterfaces,
         discoverySchemas,
-        on: { prompt, response }
+        on: { prompt, response, onLLMResponse }
     } = agentConfig
     
     // Initialize IO runtime
@@ -38,7 +38,8 @@ export async function AgentRuntime(agentConfig) {
         agentName,
         llmApi,
         llmConfig,
-        runner
+        runner,
+        { onLLMResponse }
     )
 
     // Create task processing function

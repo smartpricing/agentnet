@@ -1,4 +1,4 @@
-import { Agent, GPT, Message, MemoryStore } from "../src/index.js"
+import { Agent, GPT, Gemini, Message, MemoryStore } from "../src/index.js"
 
 // Example: Creating an agent directly without using AgentLoader
 async function createAgentDirectly() {
@@ -9,8 +9,8 @@ async function createAgentDirectly() {
             namespace: "smartchat",
             description: "A highly advanced accommodation manager agent"
         })
-        .withLLM(GPT, {
-            model: "gpt-4o-mini",
+        .withLLM(Gemini, {
+            model: "gemini-2.5-flash",
             instructions: "You are a highly advanced accommodation manager agent. \nPrioritize clarity and helpfulness.\nUse tools effectively to gather information."
         })
         .withStore(MemoryStore(), {
@@ -20,7 +20,7 @@ async function createAgentDirectly() {
             maxRuns: 10,                    // Maximum number of LLM calls per query
             maxConversationLength: 10       // Maximum conversation history length
         })
-        .addTool({
+        /*.addTool({
             name: "get_rooms_list_tool",
             description: "Retrieves a list of available rooms based on criteria.",
             type: "function",
@@ -67,8 +67,12 @@ async function createAgentDirectly() {
             return { 
                 answer: "The Double room with a view of the sea has a king size bed, a private balcony, and a view of the sea." 
             }
-        })
+        })*/
         // Optional: Add prompt handler
+        .onLLMResponse(async (state, response, usage) => {
+            console.log("LLM response:", state, usage)
+            return response
+        })
         .prompt(async (state, formattedInput) => {
             console.log("Processing prompt:", formattedInput)
             return formattedInput

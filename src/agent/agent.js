@@ -13,7 +13,8 @@ import { logger } from "../utils/logger.js"
  */
 const DEFAULT_HOOKS = {
     prompt: async (state, formattedInput) => formattedInput,
-    response: async (state, conversation, result) => result
+    response: async (state, conversation, result) => result,
+    onLLMResponse: null // Optional: called after each LLM call with (state, response, usage)
 }
 
 /**
@@ -439,6 +440,25 @@ export function Agent() {
     }
 
     /**
+     * Sets the LLM response handler - called after each LLM API call
+     * @param {Function} handler - Handler function (state, response, usage) => void
+     *   - state: Current agent state
+     *   - response: Raw LLM response object
+     *   - usage: Normalized token usage { inputTokens, outputTokens, totalTokens, reasoningTokens, cachedTokens, provider, model, raw }
+     * @returns {Object} Agent builder for chaining
+     */
+    function onLLMResponse(handler) {
+        if (typeof handler !== 'function') {
+            throw new ConfigurationError("onLLMResponse handler must be a function", {
+                provided: typeof handler
+            });
+        }
+        
+        config.on.onLLMResponse = handler;
+        return this;
+    }
+
+    /**
      * Sets agent metadata
      * @param {Object} metadata - Agent metadata
      * @returns {Object} Agent builder for chaining
@@ -542,6 +562,7 @@ export function Agent() {
         bindTool,
         prompt,
         response,
+        onLLMResponse,
         compile,
         setMetadata,
         getToolsSchemas,

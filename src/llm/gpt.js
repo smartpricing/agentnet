@@ -39,6 +39,25 @@ class OpenAILLM extends BaseLLM {
 	}
 
 	/**
+	 * Extracts and normalizes token usage from the OpenAI response
+	 * @param {Object} response - The raw OpenAI response
+	 * @returns {Object} Normalized usage object
+	 */
+	extractUsage(response) {
+		const usage = response?.usage;
+		return {
+			inputTokens: usage?.input_tokens ?? 0,
+			outputTokens: usage?.output_tokens ?? 0,
+			totalTokens: usage?.total_tokens ?? 0,
+			reasoningTokens: usage?.output_tokens_details?.reasoning_tokens ?? 0,
+			cachedTokens: usage?.input_tokens_details?.cached_tokens ?? 0,
+			provider: this.type,
+			model: response?.model || null,
+			raw: usage || null
+		};
+	}
+
+	/**
 	 * Calls the OpenAI model with the provided configuration and context
 	 * @param {Object} llmClientConfig - Configuration for the OpenAI model
 	 * @param {Object} context - Context containing client, tools map and conversation
@@ -61,6 +80,7 @@ class OpenAILLM extends BaseLLM {
 		//console.log(JSON.stringify(input, null, 2))
 		try {
 			const response = await client.responses.create(input);
+			console.log(JSON.stringify(response, null, 2))
 			logger.debug('OpenAI response received');
 			return response;
 		} catch (error) {
@@ -197,6 +217,7 @@ export default {
 	prompt: openaiLLM.prompt.bind(openaiLLM),
 	callModel: openaiLLM.callModel.bind(openaiLLM),
 	onResponse: openaiLLM.onResponse.bind(openaiLLM),
+	extractUsage: openaiLLM.extractUsage.bind(openaiLLM),
 	getCalledTools: openaiLLM.getCalledTools.bind(openaiLLM),
 	resetCalledTools: openaiLLM.resetCalledTools.bind(openaiLLM)
 }

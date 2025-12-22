@@ -34,6 +34,25 @@ class GeminiLLM extends BaseLLM {
   }
 
   /**
+   * Extracts and normalizes token usage from the Gemini response
+   * @param {Object} response - The raw Gemini response
+   * @returns {Object} Normalized usage object
+   */
+  extractUsage(response) {
+    const usage = response?.usageMetadata;
+    return {
+      inputTokens: usage?.promptTokenCount ?? 0,
+      outputTokens: usage?.candidatesTokenCount ?? 0,
+      totalTokens: usage?.totalTokenCount ?? 0,
+      reasoningTokens: usage?.thoughtsTokenCount ?? 0,
+      cachedTokens: 0, // Gemini doesn't report cached tokens
+      provider: this.type,
+      model: response?.modelVersion || null,
+      raw: usage || null
+    };
+  }
+
+  /**
    * Calls the Gemini model with the provided configuration and context
    * @param {Object} llmClientConfig - Configuration for the Gemini model
    * @param {Object} context - Context containing client, tools map and conversation
@@ -64,8 +83,8 @@ class GeminiLLM extends BaseLLM {
     });
     
     try {
-      
       const res = await client.models.generateContent(input);
+      console.log(JSON.stringify(res, null, 2))
       logger.debug('Gemini response', res)
       logger.debug('Gemini response received', {
         responseType: res.response?.candidates ? 'candidates' : 'unknown',
@@ -197,6 +216,7 @@ export default {
   prompt: geminiLLM.prompt.bind(geminiLLM),
   callModel: geminiLLM.callModel.bind(geminiLLM),
   onResponse: geminiLLM.onResponse.bind(geminiLLM),
+  extractUsage: geminiLLM.extractUsage.bind(geminiLLM),
   getCalledTools: geminiLLM.getCalledTools.bind(geminiLLM), 
   resetCalledTools: geminiLLM.resetCalledTools.bind(geminiLLM)
 }

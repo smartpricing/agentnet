@@ -28,6 +28,26 @@ export class BaseLLM {
     return config;
   }
 
+  /**
+   * Extracts and normalizes token usage from the LLM response
+   * @param {Object} response - The raw LLM response
+   * @returns {Object} Normalized usage object
+   */
+  extractUsage(response) {
+    // Default implementation returns empty usage
+    // Subclasses should override this
+    return {
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+      reasoningTokens: 0,
+      cachedTokens: 0,
+      provider: this.type,
+      model: null,
+      raw: null
+    };
+  }
+
   getCalledTools() {
     return this.calledTools;
   }
