@@ -84,7 +84,7 @@ class GeminiLLM extends BaseLLM {
     
     try {
       const res = await client.models.generateContent(input);
-      console.log(JSON.stringify(res, null, 2))
+
       logger.debug('Gemini response', res)
       logger.debug('Gemini response received', {
         responseType: res.response?.candidates ? 'candidates' : 'unknown',

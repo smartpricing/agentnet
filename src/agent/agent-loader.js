@@ -301,18 +301,25 @@ function configureRunner(agentBuilder, runnerSpec) {
  * @returns {object} Agent interface
  */
 function createAgentInterface(agentBuilder, toolMap) {
-    return {
+    const agentInterface = {
         tools: toolMap,
         prompt: (callback) => {
             agentBuilder._config.on.prompt = callback;
+            return agentInterface;
         },
         response: (callback) => {
             agentBuilder._config.on.response = callback;
+            return agentInterface;
+        },
+        onLLMResponse: (callback) => {
+            agentBuilder._config.on.onLLMResponse = callback;
+            return agentInterface;
         },
         compile: async () => {
             return await agentBuilder.compile();
         }
     };
+    return agentInterface;
 }
 
 /**

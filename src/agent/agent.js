@@ -201,6 +201,10 @@ export function Agent() {
             
             // Event handlers validation
             Object.entries(config.on).forEach(([eventName, handler]) => {
+                // Skip null handlers (optional hooks like onLLMResponse)
+                if (handler === null) {
+                    return;
+                }
                 if (typeof handler !== 'function') {
                     throw new ConfigurationError(`Event handler for '${eventName}' must be a function`, { 
                         eventName, 

@@ -80,7 +80,7 @@ class OpenAILLM extends BaseLLM {
 		//console.log(JSON.stringify(input, null, 2))
 		try {
 			const response = await client.responses.create(input);
-			console.log(JSON.stringify(response, null, 2))
+
 			logger.debug('OpenAI response received');
 			return response;
 		} catch (error) {
