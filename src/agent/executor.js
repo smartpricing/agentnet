@@ -238,7 +238,7 @@ export async function build(
 				}
 			}
 
-			if (run >= maxRuns) {
+			if (run > maxRuns) {
 				logger.warn(`Agent ${agentName} max over runs reached: ${run}/${maxRuns}`);
 				api.resetCalledTools();
 				const rawConversation = contents.getRawConversation();
