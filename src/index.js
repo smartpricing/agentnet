@@ -11,6 +11,13 @@ import {
     noStore
 } from "./store/store.js";
 import { Conversation } from "./utils/conversation.js";
+import {
+    logger as _logger,
+    setLogger as _setLogger,
+    resetLogger as _resetLogger,
+    createLogger as _createLogger,
+    LogLevel as _LogLevel
+} from "./utils/logger.js";
 
 export const AgentLoaderFile = _AgentLoader.AgentLoaderFile
 export const AgentLoaderJSON = _AgentLoader.AgentLoaderJSON
@@ -30,6 +37,14 @@ export const RedisStore = redisStore
 export const MemoryStore = memoryStore
 export const NoStore = noStore
 export const SessionStore = session
+
+// Logging: `logger` is used internally; host apps can route it through their own
+// logger with setLogger() (and resetLogger() to restore the default).
+export const logger = _logger
+export const setLogger = _setLogger
+export const resetLogger = _resetLogger
+export const createLogger = _createLogger
+export const LogLevel = _LogLevel
 
 
 import { connect } from "@nats-io/transport-node"
