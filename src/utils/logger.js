@@ -205,5 +205,54 @@ export function createLogger(customConfig = {}) {
   };
 }
 
-// Create and export default logger
-export const logger = createLogger(); 
+// The built-in logger (unchanged default behavior).
+const defaultLogger = createLogger();
+
+// The logger all of agentnet writes through. Swappable at runtime via setLogger().
+let activeLogger = defaultLogger;
+
+const REQUIRED_METHODS = ['error', 'warn', 'info', 'debug', 'trace'];
+
+/**
+ * Replace the logger used across agentnet at runtime, so a host application can
+ * route agentnet's logs into its own logger (e.g. a structured/JSON pino logger)
+ * instead of the built-in console output.
+ *
+ * The provided logger must implement error/warn/info/debug/trace with the same
+ * `(message, data?)` signature as the built-in logger. Optionally it may provide
+ * `setLevel` and `getConfig`.
+ *
+ * @param {object} customLogger
+ * @returns {object} the previously active logger (useful to restore it later)
+ */
+export function setLogger(customLogger) {
+  if (!customLogger || REQUIRED_METHODS.some((m) => typeof customLogger[m] !== 'function')) {
+    throw new Error(
+      `setLogger: logger must implement ${REQUIRED_METHODS.join(', ')} methods`
+    );
+  }
+  const previous = activeLogger;
+  activeLogger = customLogger;
+  return previous;
+}
+
+/** Restore the built-in default logger. */
+export function resetLogger() {
+  activeLogger = defaultLogger;
+}
+
+/**
+ * The agentnet logger. This is a stable reference whose methods always delegate
+ * to the currently active logger, so calls made through already-imported
+ * `logger` bindings keep working after setLogger().
+ */
+export const logger = {
+  error: (...args) => activeLogger.error(...args),
+  warn: (...args) => activeLogger.warn(...args),
+  info: (...args) => activeLogger.info(...args),
+  debug: (...args) => activeLogger.debug(...args),
+  trace: (...args) => activeLogger.trace(...args),
+  // Optional on custom loggers — delegate only when implemented.
+  setLevel: (...args) => activeLogger.setLevel?.(...args),
+  getConfig: (...args) => activeLogger.getConfig?.(...args)
+};
